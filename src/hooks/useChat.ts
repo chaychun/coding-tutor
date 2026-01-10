@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import type { Message, Exercise, ToolCall } from "@/lib/types";
+import { generateTitleFromMessage } from "@/lib/utils/generateTitle";
 
 interface ContentBlock {
   type: string;
@@ -35,6 +36,7 @@ interface UseChatOptions {
   agentSessionId?: string;
   onExercise?: (exercise: Exercise) => void;
   onSessionId?: (sessionId: string) => void;
+  onTitleGenerated?: (title: string) => void;
 }
 
 export function useChat({
@@ -43,6 +45,7 @@ export function useChat({
   agentSessionId,
   onExercise,
   onSessionId,
+  onTitleGenerated,
 }: UseChatOptions) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -50,6 +53,8 @@ export function useChat({
   const [streamingToolCalls, setStreamingToolCalls] = useState<ToolCall[]>([]);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const titleGeneratedRef = useRef(false);
+  const messagesRef = useRef<Message[]>([]);
 
   // Generate a unique message ID
   const generateMessageId = () =>
@@ -75,7 +80,8 @@ export function useChat({
           content,
           timestamp: new Date().toISOString(),
         };
-        setMessages((prev) => [...prev, userMessage]);
+        messagesRef.current = [...messagesRef.current, userMessage];
+        setMessages(messagesRef.current);
       }
 
       setIsStreaming(true);
@@ -249,12 +255,10 @@ export function useChat({
             toolCalls: finalToolCalls.length > 0 ? finalToolCalls : undefined,
           };
 
-          // Update state and get the new messages array for persistence
-          let updatedMessages: Message[] = [];
-          setMessages((prev) => {
-            updatedMessages = [...prev, assistantMessage];
-            return updatedMessages;
-          });
+          // Update ref and state
+          messagesRef.current = [...messagesRef.current, assistantMessage];
+          const updatedMessages = messagesRef.current;
+          setMessages(updatedMessages);
 
           // Persist messages and agentSessionId to storage (fire and forget, but with error handling)
           fetch(`/api/projects/${projectId}/sessions/${sessionId}`, {
@@ -272,6 +276,28 @@ export function useChat({
               console.error("Failed to persist messages:", persistError);
               setError("Failed to save messages");
             });
+
+          // Generate title from first user message (fire and forget)
+          if (!titleGeneratedRef.current && updatedMessages.length === 2 && action === "message") {
+            titleGeneratedRef.current = true;
+            const firstUserMessage = updatedMessages.find((m) => m.role === "user");
+            if (firstUserMessage) {
+              const generatedTitle = generateTitleFromMessage(firstUserMessage.content);
+              fetch(`/api/projects/${projectId}/sessions/${sessionId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: generatedTitle }),
+              })
+                .then((response) => {
+                  if (response.ok) {
+                    onTitleGenerated?.(generatedTitle);
+                  }
+                })
+                .catch((err) => {
+                  console.error('Failed to update session title:', err);
+                });
+            }
+          }
         }
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
@@ -286,7 +312,7 @@ export function useChat({
         abortControllerRef.current = null;
       }
     },
-    [projectId, sessionId, agentSessionId, onExercise, onSessionId]
+    [projectId, sessionId, agentSessionId, onExercise, onSessionId, onTitleGenerated]
   );
 
   // Cancel ongoing request
@@ -298,6 +324,8 @@ export function useChat({
 
   // Clear messages
   const clearMessages = useCallback(() => {
+    messagesRef.current = [];
+    titleGeneratedRef.current = false;
     setMessages([]);
     setStreamingContent("");
     setStreamingToolCalls([]);
@@ -306,7 +334,12 @@ export function useChat({
 
   // Load messages from session
   const loadMessages = useCallback((sessionMessages: Message[]) => {
+    messagesRef.current = sessionMessages;
     setMessages(sessionMessages);
+    // If session has messages, title was already generated
+    if (sessionMessages.length > 0) {
+      titleGeneratedRef.current = true;
+    }
   }, []);
 
   return {

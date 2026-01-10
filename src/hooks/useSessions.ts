@@ -85,6 +85,16 @@ export function useSessions(projectId: string | null) {
     }
   }, [currentSession?.id]);
 
+  // Update session title in local state only (used after async title generation)
+  const updateSessionTitleLocal = useCallback((sessionId: string, title: string) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, title } : s))
+    );
+    if (currentSession?.id === sessionId) {
+      setCurrentSession((prev) => (prev ? { ...prev, title } : null));
+    }
+  }, [currentSession?.id]);
+
   // Select a session
   const selectSession = useCallback(async (pid: string, sessionId: string) => {
     return fetchSession(pid, sessionId);
@@ -104,6 +114,7 @@ export function useSessions(projectId: string | null) {
     fetchSession,
     createSession,
     updateSession,
+    updateSessionTitleLocal,
     selectSession,
     clearSession,
   };

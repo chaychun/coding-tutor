@@ -54,20 +54,21 @@ export const MarkdownContent = memo(function MarkdownContent({
           <strong className="font-semibold">{children}</strong>
         ),
         em: ({ children }) => <em className="italic">{children}</em>,
-        code: ({ inline, className, children }) => {
-          if (!inline) {
+        code: ({ className, children, ...props }) => {
+          const isCodeBlock = className?.startsWith("language-");
+          if (isCodeBlock) {
             const language = className?.replace("language-", "") || "";
             return (
               <pre className="my-2 p-3 bg-gray-900 dark:bg-gray-950 text-gray-100 rounded-lg overflow-x-auto text-xs">
                 {language && (
                   <div className="text-gray-400 text-xs mb-2">{language}</div>
                 )}
-                <code>{children}</code>
+                <code {...props}>{children}</code>
               </pre>
             );
           }
           return (
-            <code className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">
+            <code className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs" {...props}>
               {children}
             </code>
           );

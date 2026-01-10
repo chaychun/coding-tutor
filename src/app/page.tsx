@@ -8,8 +8,8 @@ import { useSessions } from "@/hooks/useSessions";
 
 export default function Home() {
   const router = useRouter();
-  const { projects, createProject } = useProjects();
-  const { sessions, createSession, fetchSessions } = useSessions(null);
+  const { projects, createProject, updateProject } = useProjects();
+  const { sessions, createSession, fetchSessions, updateSession } = useSessions(null);
 
   const handleSelectProject = useCallback((projectId: string) => {
     fetchSessions(projectId);
@@ -39,6 +39,20 @@ export default function Home() {
     [createSession, router]
   );
 
+  const handleRenameProject = useCallback(
+    async (projectId: string, newName: string) => {
+      await updateProject(projectId, { name: newName });
+    },
+    [updateProject]
+  );
+
+  const handleRenameSession = useCallback(
+    async (projectId: string, sessionId: string, newTitle: string) => {
+      await updateSession(projectId, sessionId, { title: newTitle });
+    },
+    [updateSession]
+  );
+
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
@@ -51,6 +65,8 @@ export default function Home() {
         onSelectSession={handleSelectSession}
         onCreateProject={handleCreateProject}
         onCreateSession={handleCreateSession}
+        onRenameProject={handleRenameProject}
+        onRenameSession={handleRenameSession}
         className="w-64 border-r border-gray-200 dark:border-gray-800"
       />
 

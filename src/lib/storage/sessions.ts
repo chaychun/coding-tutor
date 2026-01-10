@@ -23,7 +23,7 @@ export async function createSession(projectId: string, title?: string): Promise<
     createdAt: now,
     updatedAt: now,
     topics: [],
-    title: title || `Session ${new Date().toLocaleDateString()}`,
+    title: title || "Untitled Session",
     messages: [],
     exercises: [],
     status: "active",

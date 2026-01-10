@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Project, Session } from "@/lib/types";
 import ProjectList from "./ProjectList";
+import CreateProjectModal from "./CreateProjectModal";
 
 interface SidebarProps {
   projects: Project[];
@@ -13,6 +14,8 @@ interface SidebarProps {
   onSelectSession: (projectId: string, sessionId: string) => void;
   onCreateProject: (name: string) => void;
   onCreateSession: (projectId: string) => void;
+  onRenameProject?: (projectId: string, newName: string) => void;
+  onRenameSession?: (projectId: string, sessionId: string, newTitle: string) => void;
   className?: string;
 }
 
@@ -25,17 +28,15 @@ export default function Sidebar({
   onSelectSession,
   onCreateProject,
   onCreateSession,
+  onRenameProject,
+  onRenameSession,
   className = "",
 }: SidebarProps) {
-  const [newProjectName, setNewProjectName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleCreateProject = () => {
-    if (newProjectName.trim()) {
-      onCreateProject(newProjectName.trim());
-      setNewProjectName("");
-      setIsCreating(false);
-    }
+  const handleCreateProject = (name: string) => {
+    onCreateProject(name);
+    setIsModalOpen(false);
   };
 
   return (
@@ -55,49 +56,26 @@ export default function Sidebar({
           onSelectProject={onSelectProject}
           onSelectSession={onSelectSession}
           onCreateSession={onCreateSession}
+          onRenameProject={onRenameProject}
+          onRenameSession={onRenameSession}
         />
       </div>
 
       {/* Create Project */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-        {isCreating ? (
-          <div className="space-y-2">
-            <input
-              type="text"
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="Project name..."
-              className="w-full px-3 py-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-700"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreateProject();
-                if (e.key === "Escape") setIsCreating(false);
-              }}
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleCreateProject}
-                className="flex-1 px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-              >
-                Create
-              </button>
-              <button
-                onClick={() => setIsCreating(false)}
-                className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setIsCreating(true)}
-            className="w-full px-3 py-2 text-sm border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-700"
-          >
-            + New Project
-          </button>
-        )}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="w-full px-3 py-2 text-sm border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-700"
+        >
+          + New Project
+        </button>
       </div>
+
+      <CreateProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreate={handleCreateProject}
+      />
     </aside>
   );
 }
