@@ -3,8 +3,8 @@ import * as path from "path";
 
 // Get the data path from environment or use default
 export function getDataPath(): string {
-  if (process.env.NODE_ENV === 'development') {
-    return './.dev-data';
+  if (process.env.NODE_ENV === "development") {
+    return "./.dev-data";
   }
   return process.env.DATA_PATH || path.join(process.env.HOME || "~", "coding-tutor-data");
 }

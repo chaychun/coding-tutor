@@ -3,6 +3,8 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { memo } from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface MarkdownContentProps {
   content: string;
@@ -38,19 +40,37 @@ export const MarkdownContent = memo(function MarkdownContent({ content }: Markdo
         ),
         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
         em: ({ children }) => <em className="italic">{children}</em>,
-        code: ({ className, children, ...props }) => {
-          const isCodeBlock = className?.startsWith("language-");
+        code: ({ className, children }) => {
+          const match = /language-(\w+)/.exec(className || "");
+          const language = match ? match[1] : "";
+          const codeString = String(children).replace(/\n$/, "");
+
+          // Check if this is a code block (has language class or contains newlines)
+          const isCodeBlock = match || codeString.includes("\n");
+
           if (isCodeBlock) {
-            const language = className?.replace("language-", "") || "";
             return (
-              <pre className="my-2 p-3 bg-gray-900 dark:bg-gray-950 text-gray-100 rounded-lg overflow-x-auto text-xs">
-                {language && <div className="text-gray-400 text-xs mb-2">{language}</div>}
-                <code {...props}>{children}</code>
-              </pre>
+              <div className="my-2 rounded-lg overflow-hidden">
+                {language && (
+                  <div className="bg-gray-800 text-gray-400 text-xs px-3 py-1">{language}</div>
+                )}
+                <SyntaxHighlighter
+                  style={oneDark}
+                  language={language || "text"}
+                  PreTag="div"
+                  customStyle={{
+                    margin: 0,
+                    borderRadius: language ? "0 0 0.5rem 0.5rem" : "0.5rem",
+                    fontSize: "0.75rem",
+                  }}
+                >
+                  {codeString}
+                </SyntaxHighlighter>
+              </div>
             );
           }
           return (
-            <code className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs" {...props}>
+            <code className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">
               {children}
             </code>
           );
