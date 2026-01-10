@@ -16,6 +16,7 @@ interface ProjectListProps {
   sessions: Session[];
   currentProjectId: string | null;
   currentSessionId: string | null;
+  loading?: boolean;
   onSelectProject: (projectId: string) => void;
   onSelectSession: (projectId: string, sessionId: string) => void;
   onCreateSession: (projectId: string) => void;
@@ -34,6 +35,7 @@ export default function ProjectList({
   sessions,
   currentProjectId,
   currentSessionId,
+  loading = false,
   onSelectProject,
   onSelectSession,
   onCreateSession,
@@ -77,6 +79,21 @@ export default function ProjectList({
   const handleCancelRename = useCallback(() => {
     setEditingItem(null);
   }, []);
+
+  if (loading) {
+    // Skeleton that matches the project list item layout
+    return (
+      <div className="space-y-1">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg">
+            <div className="w-3 h-3 bg-muted rounded animate-pulse"></div>
+            <div className="flex-1 h-4 bg-muted rounded animate-pulse"></div>
+            <div className="w-4 h-4 bg-muted rounded animate-pulse"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (projects.length === 0) {
     return (

@@ -4,7 +4,7 @@ import {
   getDataPath,
   readJsonFile,
   writeJsonFile,
-  listFiles,
+  listDirectories,
   generateId,
   ensureDir,
 } from "./utils";
@@ -78,7 +78,7 @@ export async function deleteProject(projectId: string): Promise<boolean> {
 // List all projects
 export async function listProjects(): Promise<Project[]> {
   const projectsDir = path.join(getDataPath(), "projects");
-  const projectIds = await listFiles(projectsDir);
+  const projectIds = await listDirectories(projectsDir);
 
   const projects: Project[] = [];
   for (const id of projectIds) {

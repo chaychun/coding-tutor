@@ -11,6 +11,7 @@ interface ChatProps {
   isStreaming: boolean;
   streamingContent: string;
   streamingToolCalls: ToolCall[];
+  loading?: boolean;
   onSendMessage: (message: string) => void;
   className?: string;
 }
@@ -21,6 +22,7 @@ export default function Chat({
   isStreaming,
   streamingContent,
   streamingToolCalls,
+  loading = false,
   onSendMessage,
   className = "",
 }: ChatProps) {
@@ -59,7 +61,15 @@ export default function Chat({
 
       {/* Messages */}
       <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4">
-        {messages.length === 0 && !streamingContent && streamingToolCalls.length === 0 ? (
+        {loading ? (
+          // Skeleton that matches the empty state layout
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="h-7 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto mb-2"></div>
+              <div className="h-5 w-56 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto"></div>
+            </div>
+          </div>
+        ) : messages.length === 0 && !streamingContent && streamingToolCalls.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center text-gray-500">
               <p className="text-lg mb-2">Ready to learn!</p>

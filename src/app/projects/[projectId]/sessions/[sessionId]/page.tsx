@@ -30,7 +30,7 @@ export default function SessionPage({ params }: PageProps) {
   const { projectId, sessionId } = use(params);
 
   // Project and session state
-  const { projects, createProject, updateProject } = useProjects();
+  const { projects, loading: projectsLoading, createProject, updateProject } = useProjects();
   const [agentSessionId, setAgentSessionId] = useState<string | undefined>();
 
   const {
@@ -157,6 +157,7 @@ export default function SessionPage({ params }: PageProps) {
         sessions={sessions}
         currentProjectId={projectId}
         currentSessionId={sessionId}
+        loading={projectsLoading}
         onSelectProject={handleSelectProject}
         onSelectSession={handleSelectSession}
         onCreateProject={handleCreateProject}
@@ -209,6 +210,7 @@ export default function SessionPage({ params }: PageProps) {
             isStreaming={isStreaming}
             streamingContent={streamingContent}
             streamingToolCalls={streamingToolCalls}
+            loading={sessionLoading || !currentSession}
             onSendMessage={handleSendMessage}
             className="w-1/2"
           />

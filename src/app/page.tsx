@@ -8,7 +8,7 @@ import { useSessions } from "@/hooks/useSessions";
 
 export default function Home() {
   const router = useRouter();
-  const { projects, createProject, updateProject } = useProjects();
+  const { projects, loading: projectsLoading, createProject, updateProject } = useProjects();
   const { sessions, createSession, fetchSessions, updateSession } = useSessions(null);
 
   const handleSelectProject = useCallback(
@@ -64,6 +64,7 @@ export default function Home() {
         sessions={sessions}
         currentProjectId={null}
         currentSessionId={null}
+        loading={projectsLoading}
         onSelectProject={handleSelectProject}
         onSelectSession={handleSelectSession}
         onCreateProject={handleCreateProject}

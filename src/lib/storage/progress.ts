@@ -120,8 +120,10 @@ export async function listTopicsWithProgress(projectId: string): Promise<TopicSu
 
   for (const file of files) {
     if (file.endsWith(".json")) {
-      const topic = file.replace(".json", "");
-      const progress = await getProgress(projectId, topic);
+      // Read the file directly instead of going through getProgress
+      // to avoid double-normalization of the topic name
+      const filePath = path.join(progressDir, file);
+      const progress = await readJsonFile<Progress>(filePath);
       if (progress) {
         topics.push({
           topic: progress.topic,

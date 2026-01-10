@@ -11,6 +11,7 @@ interface SidebarProps {
   sessions: Session[];
   currentProjectId: string | null;
   currentSessionId: string | null;
+  loading?: boolean;
   onSelectProject: (projectId: string) => void;
   onSelectSession: (projectId: string, sessionId: string) => void;
   onCreateProject: (name: string) => void;
@@ -25,6 +26,7 @@ export default function Sidebar({
   sessions,
   currentProjectId,
   currentSessionId,
+  loading = false,
   onSelectProject,
   onSelectSession,
   onCreateProject,
@@ -54,6 +56,7 @@ export default function Sidebar({
           sessions={sessions}
           currentProjectId={currentProjectId}
           currentSessionId={currentSessionId}
+          loading={loading}
           onSelectProject={onSelectProject}
           onSelectSession={onSelectSession}
           onCreateSession={onCreateSession}
