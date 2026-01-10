@@ -104,9 +104,7 @@ export default function ProjectList({
                 {isEditingProject ? (
                   <div
                     className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
-                      isSelected
-                        ? "bg-accent text-accent-foreground"
-                        : "hover:bg-accent/50"
+                      isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
                     }`}
                   >
                     <span className="text-xs">{isExpanded ? "▼" : "▶"}</span>
@@ -123,9 +121,7 @@ export default function ProjectList({
                   <button
                     onClick={() => toggleProject(project.id)}
                     className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
-                      isSelected
-                        ? "bg-accent text-accent-foreground"
-                        : "hover:bg-accent/50"
+                      isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
                     }`}
                   >
                     <span className="text-xs">{isExpanded ? "▼" : "▶"}</span>
@@ -136,9 +132,7 @@ export default function ProjectList({
               </ContextMenuTrigger>
               <ContextMenuContent>
                 <ContextMenuItem
-                  onClick={() =>
-                    setEditingItem({ type: "project", id: project.id })
-                  }
+                  onClick={() => setEditingItem({ type: "project", id: project.id })}
                 >
                   Rename
                 </ContextMenuItem>
