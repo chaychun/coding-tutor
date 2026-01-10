@@ -35,3 +35,6 @@ package-lock.json
 # claude code cache
 .claude/cache
 .claude/tsc-cache
+
+# local development data
+/.dev-data/

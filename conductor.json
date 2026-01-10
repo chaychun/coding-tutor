@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "setup": "bun install",
+    "setup": "bun install; cp $CONDUCTOR_ROOT_PATH/.env.local .env.local; cp -r $CONDUCTOR_ROOT_PATH/../coding-tutor-data .dev-data",
     "run": "bun run dev"
   }
 }
