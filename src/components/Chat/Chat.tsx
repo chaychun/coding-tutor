@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import type { Message, Exercise, ToolCall } from "@/lib/types";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
@@ -25,13 +25,30 @@ export default function Chat({
   className = "",
 }: ChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isUserScrolledUpRef = useRef(false);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Track if user has scrolled up from bottom
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    // Consider "at bottom" if within 100px of the bottom
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+    isUserScrolledUpRef.current = !isAtBottom;
+  }, []);
+
+  // Auto-scroll to bottom when content changes, but only if user hasn't scrolled up
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && !isUserScrolledUpRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, streamingContent, streamingToolCalls]);
+  }, [messages, streamingToolCalls.length]);
+
+  // Also scroll on streaming content updates, but only if user hasn't scrolled up
+  useEffect(() => {
+    if (scrollRef.current && !isUserScrolledUpRef.current && streamingContent) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [streamingContent]);
 
   return (
     <div className={`flex flex-col ${className}`}>
@@ -41,7 +58,7 @@ export default function Chat({
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4">
         {messages.length === 0 && !streamingContent && streamingToolCalls.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center text-gray-500">
