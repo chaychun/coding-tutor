@@ -594,16 +594,45 @@ ${code}
     [activeExercise, projectId, sessionId, sendMessage]
   );
 
-  // Skip exercise
+  // Skip exercise - handles the skip directly without relying on AI to update status
   const skipExercise = useCallback(async () => {
-    if (!activeExercise || !sessionId) return;
+    if (!activeExercise || !sessionId || !projectId) return;
 
-    // Clear active exercise
+    const exerciseToSkip = activeExercise;
+
+    // Clear active exercise immediately for responsive UI
     setActiveExercise(null);
 
-    // Send skip message to AI
-    await sendMessage(`[Skipped exercise: ${activeExercise.title}]`, "message");
-  }, [activeExercise, sessionId, sendMessage]);
+    // Update the exercise status to skipped via API
+    try {
+      const response = await fetch(
+        `/api/projects/${projectId}/sessions/${sessionId}/exercises/${exerciseToSkip.id}/skip`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        console.error("Failed to skip exercise:", await response.text());
+      }
+    } catch (err) {
+      console.error("Error calling skip API:", err);
+    }
+
+    // Update local exercises state
+    setExercises((prev) => ({
+      ...prev,
+      [exerciseToSkip.id]: {
+        ...prev[exerciseToSkip.id],
+        status: "skipped",
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+
+    // Notify AI that the exercise was skipped (status already updated, AI should just acknowledge)
+    await sendMessage(
+      `[System: The student has skipped exercise "${exerciseToSkip.title}". The exercise status has been automatically updated to skipped. Please acknowledge this and offer to help with something else or continue to the next topic.]`,
+      "message"
+    );
+  }, [activeExercise, sessionId, projectId, sendMessage]);
 
   // Retry exercise - reactivates the exercise panel with the previous code
   const retryExercise = useCallback(
