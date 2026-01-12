@@ -35,10 +35,7 @@ export default function ExerciseHeader({
       )}
       <span className="font-semibold text-sm flex-1 text-left">{title}</span>
       {isRetry && (
-        <Badge
-          variant="secondary"
-          className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
-        >
+        <Badge variant="retry">
           <ArrowClockwise className="w-3 h-3 mr-1" />
           Try again
         </Badge>

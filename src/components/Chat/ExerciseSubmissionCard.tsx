@@ -113,10 +113,7 @@ export function ExerciseSubmissionCard({
   const getStatusBadge = () => {
     if (!displayStatus) {
       return (
-        <Badge
-          variant="secondary"
-          className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-        >
+        <Badge variant="pending">
           <Clock className="w-3 h-3 mr-1" />
           Pending
         </Badge>
@@ -126,20 +123,14 @@ export function ExerciseSubmissionCard({
     switch (displayStatus) {
       case "passed":
         return (
-          <Badge
-            variant="secondary"
-            className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-          >
+          <Badge variant="success">
             <Check className="w-3 h-3 mr-1" />
             Passed
           </Badge>
         );
       case "skipped":
         return (
-          <Badge
-            variant="secondary"
-            className="bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
-          >
+          <Badge variant="muted">
             <Prohibit className="w-3 h-3 mr-1" />
             Skipped
           </Badge>
@@ -147,40 +138,28 @@ export function ExerciseSubmissionCard({
       case "active":
       case "pending_review":
         return (
-          <Badge
-            variant="secondary"
-            className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-          >
+          <Badge variant="warning">
             <Clock className="w-3 h-3 mr-1" />
             Pending
           </Badge>
         );
       case "needs_retry":
         return (
-          <Badge
-            variant="secondary"
-            className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
-          >
+          <Badge variant="retry">
             <ArrowClockwise className="w-3 h-3 mr-1" />
             Needs Retry
           </Badge>
         );
       case "failed":
         return (
-          <Badge
-            variant="secondary"
-            className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-          >
+          <Badge variant="error">
             <X className="w-3 h-3 mr-1" />
             Failed
           </Badge>
         );
       case "passed_with_feedback":
         return (
-          <Badge
-            variant="secondary"
-            className="bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/30 dark:text-fuchsia-300"
-          >
+          <Badge variant="feedback">
             <Check className="w-3 h-3 mr-1" />
             Passed with feedback
           </Badge>
