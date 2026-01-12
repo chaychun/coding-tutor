@@ -212,6 +212,7 @@ export default function SessionPage({ params }: PageProps) {
           <Chat
             messages={messages}
             currentExercise={currentExercise}
+            exercises={currentSession?.exercises}
             isStreaming={isStreaming}
             streamingContent={streamingContent}
             streamingToolCalls={streamingToolCalls}

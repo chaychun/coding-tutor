@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface ChatProps {
   messages: Message[];
   currentExercise: Exercise | null;
+  exercises?: Record<string, Exercise>;
   isStreaming: boolean;
   streamingContent: string;
   streamingToolCalls: ToolCall[];
@@ -21,6 +22,7 @@ interface ChatProps {
 export default function Chat({
   messages,
   currentExercise,
+  exercises,
   isStreaming,
   streamingContent,
   streamingToolCalls,
@@ -89,6 +91,7 @@ export default function Chat({
             <MessageList
               messages={messages}
               currentExercise={currentExercise}
+              exercises={exercises}
               streamingContent={streamingContent}
               streamingToolCalls={streamingToolCalls}
               streamingContentBlocks={streamingContentBlocks}

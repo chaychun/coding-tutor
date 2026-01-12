@@ -1,15 +1,29 @@
 "use client";
 
-import type { Message } from "@/lib/types";
+import type { Message, Exercise } from "@/lib/types";
 import { MarkdownContent } from "./MarkdownContent";
 import { ToolCallBlock } from "./ToolCallBlock";
+import { ExerciseSubmissionCard } from "./ExerciseSubmissionCard";
 
 interface ChatMessageProps {
   message: Message;
+  exercises?: Record<string, Exercise>;
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({ message, exercises }: ChatMessageProps) {
   const isUser = message.role === "user";
+
+  // For user messages with exercise submission, render ExerciseSubmissionCard
+  if (isUser && message.exerciseSubmission) {
+    const exercise = exercises?.[message.exerciseSubmission.exerciseId];
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%]">
+          <ExerciseSubmissionCard submission={message.exerciseSubmission} exercise={exercise} />
+        </div>
+      </div>
+    );
+  }
 
   // Use contentBlocks if available for interleaved rendering
   if (message.contentBlocks && message.contentBlocks.length > 0) {
