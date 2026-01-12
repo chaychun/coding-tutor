@@ -111,6 +111,7 @@ export function ExerciseSubmissionCard({ submission, exercise }: ExerciseSubmiss
             Skipped
           </Badge>
         );
+      case "active":
       case "pending_review":
         return (
           <Badge

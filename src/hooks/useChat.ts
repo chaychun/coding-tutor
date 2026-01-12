@@ -67,15 +67,16 @@ export function useChat({
     async (
       content: string,
       action: "message" | "submit" | "hint" = "message",
-      exerciseSubmission?: ExerciseSubmission
+      exerciseSubmission?: ExerciseSubmission,
+      editorCode?: string
     ) => {
       if (!projectId || !sessionId) {
         setError("No project or session selected");
         return;
       }
 
-      // Add user message immediately (only for regular messages)
-      if (action === "message") {
+      // Add user message immediately (for regular messages and submissions)
+      if (action === "message" || action === "submit") {
         const userMessage: Message = {
           id: generateMessageId(),
           role: "user",
@@ -212,6 +213,45 @@ export function useChat({
               })();
               pendingExerciseFetches.push(fetchPromise);
             }
+
+            // Detect exercise update from tool call result (status changes, etc.)
+            if (
+              existingCall.name === "mcp__coding-tutor__update_exercise" &&
+              existingCall.status === "completed" &&
+              existingCall.output
+            ) {
+              const fetchPromise = (async () => {
+                try {
+                  const result = JSON.parse(existingCall.output);
+                  if (result.exerciseId) {
+                    // Fetch updated session to get new exercise status
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                      if (attempt > 0) {
+                        await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
+                      }
+
+                      const response = await fetch(
+                        `/api/projects/${projectId}/sessions/${sessionId}`,
+                        { cache: "no-store" }
+                      );
+
+                      if (response.ok) {
+                        const session = await response.json();
+
+                        // Update the full exercises map to reflect status changes
+                        if (session.exercises && Object.keys(session.exercises).length > 0) {
+                          setExercises(session.exercises);
+                          break;
+                        }
+                      }
+                    }
+                  }
+                } catch (e) {
+                  console.error("Failed to parse exercise update result:", e);
+                }
+              })();
+              pendingExerciseFetches.push(fetchPromise);
+            }
           }
         }
       };
@@ -226,6 +266,7 @@ export function useChat({
             sessionId,
             resumeSessionId: agentSessionId,
             action,
+            editorCode,
           }),
           signal: abortControllerRef.current.signal,
         });
@@ -465,8 +506,8 @@ ${code}
       // Clear active exercise first (panel disappears)
       setActiveExercise(null);
 
-      // Send the message with exercise submission metadata
-      await sendMessage(submissionContent, "submit", exerciseSubmission);
+      // Send the message with exercise submission metadata and editor code
+      await sendMessage(submissionContent, "submit", exerciseSubmission, code);
     },
     [activeExercise, sessionId, sendMessage]
   );
