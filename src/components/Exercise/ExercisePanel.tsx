@@ -75,6 +75,7 @@ export default function ExercisePanel({
       <ExerciseHeader
         title={exercise.title}
         language={exercise.language}
+        status={exercise.status}
         isCollapsed={isCollapsed}
         onToggle={() => setIsCollapsed(!isCollapsed)}
       />

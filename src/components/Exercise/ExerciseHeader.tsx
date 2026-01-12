@@ -1,11 +1,14 @@
 "use client";
 
-import { CaretDown, CaretRight } from "@phosphor-icons/react";
+import { CaretDown, CaretRight, ArrowClockwise } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import type { ExerciseStatus } from "@/lib/types";
 
 interface ExerciseHeaderProps {
   title: string;
   language: string;
+  status: ExerciseStatus;
   isCollapsed: boolean;
   onToggle: () => void;
 }
@@ -13,9 +16,12 @@ interface ExerciseHeaderProps {
 export default function ExerciseHeader({
   title,
   language,
+  status,
   isCollapsed,
   onToggle,
 }: ExerciseHeaderProps) {
+  const isRetry = status === "needs_retry";
+
   return (
     <Button
       variant="ghost"
@@ -28,6 +34,15 @@ export default function ExerciseHeader({
         <CaretDown className="size-4 shrink-0" />
       )}
       <span className="font-semibold text-sm flex-1 text-left">{title}</span>
+      {isRetry && (
+        <Badge
+          variant="secondary"
+          className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
+        >
+          <ArrowClockwise className="w-3 h-3 mr-1" />
+          Try again
+        </Badge>
+      )}
       <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-sm">
         {language}
       </span>
