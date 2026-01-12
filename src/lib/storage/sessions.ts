@@ -1,6 +1,13 @@
 import * as path from "path";
 import type { Session, Message, Exercise, ExerciseAttempt } from "../types";
-import { getDataPath, readJsonFile, writeJsonFile, listFiles, generateId } from "./utils";
+import {
+  getDataPath,
+  readJsonFile,
+  writeJsonFile,
+  updateJsonFile,
+  listFiles,
+  generateId,
+} from "./utils";
 
 // Get sessions directory for a project
 function getSessionsDir(projectId: string): string {
@@ -36,8 +43,11 @@ export async function createSession(projectId: string, title?: string): Promise<
 
 // Get a session by ID
 export async function getSession(projectId: string, sessionId: string): Promise<Session | null> {
-  const session = await readJsonFile<Session>(getSessionFilePath(projectId, sessionId));
-  if (!session) return null;
+  const filePath = getSessionFilePath(projectId, sessionId);
+  const session = await readJsonFile<Session>(filePath);
+  if (!session) {
+    return null;
+  }
 
   // Migration: convert old exercises array to Record format
   if (Array.isArray(session.exercises)) {
@@ -52,23 +62,31 @@ export async function getSession(projectId: string, sessionId: string): Promise<
   return session;
 }
 
-// Update a session
+// Update a session (atomic read-modify-write)
 export async function updateSession(
   projectId: string,
   sessionId: string,
   updates: Partial<Omit<Session, "id" | "projectId" | "createdAt">>
 ): Promise<Session | null> {
-  const session = await getSession(projectId, sessionId);
-  if (!session) return null;
+  const filePath = getSessionFilePath(projectId, sessionId);
 
-  const updatedSession: Session = {
-    ...session,
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
+  return updateJsonFile<Session>(filePath, (session) => {
+    if (!session) return null;
 
-  await writeJsonFile(getSessionFilePath(projectId, sessionId), updatedSession);
-  return updatedSession;
+    // Apply migrations
+    if (Array.isArray(session.exercises)) {
+      session.exercises = {};
+    }
+    if (session.activeExerciseId === undefined) {
+      session.activeExerciseId = null;
+    }
+
+    return {
+      ...session,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+  });
 }
 
 // Add a message to a session
@@ -95,82 +113,107 @@ export async function addMessageToSession(
   return message;
 }
 
-// Add an exercise to a session
+// Add an exercise to a session (atomic)
 export async function addExerciseToSession(
   projectId: string,
   sessionId: string,
   exercise: Exercise
 ): Promise<void> {
-  const session = await getSession(projectId, sessionId);
-  if (!session) return;
+  const filePath = getSessionFilePath(projectId, sessionId);
 
-  session.exercises[exercise.id] = exercise;
-  session.updatedAt = new Date().toISOString();
+  await updateJsonFile<Session>(filePath, (session) => {
+    if (!session) {
+      return null;
+    }
 
-  await writeJsonFile(getSessionFilePath(projectId, sessionId), session);
+    // Apply migrations
+    if (Array.isArray(session.exercises)) {
+      session.exercises = {};
+    }
+
+    session.exercises[exercise.id] = exercise;
+    session.updatedAt = new Date().toISOString();
+
+    return session;
+  });
 }
 
-// Update an exercise in a session
+// Update an exercise in a session (atomic)
 export async function updateExerciseInSession(
   projectId: string,
   sessionId: string,
   exerciseId: string,
   updates: Partial<Exercise>
 ): Promise<void> {
-  const session = await getSession(projectId, sessionId);
-  if (!session) return;
+  const filePath = getSessionFilePath(projectId, sessionId);
 
-  const existingExercise = session.exercises[exerciseId];
-  if (existingExercise) {
-    // Update existing exercise
-    session.exercises[exerciseId] = {
-      ...existingExercise,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-  } else {
-    // Create new exercise if it doesn't exist (should not happen normally)
-    session.exercises[exerciseId] = updates as Exercise;
-  }
+  await updateJsonFile<Session>(filePath, (session) => {
+    if (!session) return null;
 
-  session.updatedAt = new Date().toISOString();
+    // Apply migrations
+    if (Array.isArray(session.exercises)) {
+      session.exercises = {};
+    }
 
-  await writeJsonFile(getSessionFilePath(projectId, sessionId), session);
+    const existingExercise = session.exercises[exerciseId];
+    if (existingExercise) {
+      session.exercises[exerciseId] = {
+        ...existingExercise,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      session.exercises[exerciseId] = updates as Exercise;
+    }
+
+    session.updatedAt = new Date().toISOString();
+    return session;
+  });
 }
 
-// Set the active exercise ID
+// Set the active exercise ID (atomic)
 export async function setActiveExerciseId(
   projectId: string,
   sessionId: string,
   exerciseId: string | null
 ): Promise<void> {
-  const session = await getSession(projectId, sessionId);
-  if (!session) return;
+  const filePath = getSessionFilePath(projectId, sessionId);
 
-  session.activeExerciseId = exerciseId;
-  session.updatedAt = new Date().toISOString();
+  await updateJsonFile<Session>(filePath, (session) => {
+    if (!session) return null;
 
-  await writeJsonFile(getSessionFilePath(projectId, sessionId), session);
+    session.activeExerciseId = exerciseId;
+    session.updatedAt = new Date().toISOString();
+    return session;
+  });
 }
 
-// Add an attempt to an exercise
+// Add an attempt to an exercise (atomic)
 export async function addExerciseAttempt(
   projectId: string,
   sessionId: string,
   exerciseId: string,
   attempt: ExerciseAttempt
 ): Promise<void> {
-  const session = await getSession(projectId, sessionId);
-  if (!session) return;
+  const filePath = getSessionFilePath(projectId, sessionId);
 
-  const exercise = session.exercises[exerciseId];
-  if (!exercise) return;
+  await updateJsonFile<Session>(filePath, (session) => {
+    if (!session) return null;
 
-  exercise.attempts.push(attempt);
-  exercise.updatedAt = new Date().toISOString();
-  session.updatedAt = new Date().toISOString();
+    // Apply migrations
+    if (Array.isArray(session.exercises)) {
+      session.exercises = {};
+    }
 
-  await writeJsonFile(getSessionFilePath(projectId, sessionId), session);
+    const exercise = session.exercises[exerciseId];
+    if (!exercise) return session;
+
+    exercise.attempts.push(attempt);
+    exercise.updatedAt = new Date().toISOString();
+    session.updatedAt = new Date().toISOString();
+
+    return session;
+  });
 }
 
 // Set agent session ID for resumption

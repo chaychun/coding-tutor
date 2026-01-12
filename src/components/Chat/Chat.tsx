@@ -66,63 +66,64 @@ export default function Chat({
 
   return (
     <div className={`flex flex-col h-full overflow-hidden ${className}`}>
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border">
-        <h2 className="font-semibold">Chat</h2>
-      </div>
-
       {/* Messages */}
       <div className="relative flex-1 min-h-0">
         <ScrollArea
           className="h-full"
           viewportRef={scrollRef}
           onScroll={handleScroll}
-          viewportClassName="px-6 pt-4 pb-8"
+          viewportClassName="px-4 pt-4 pb-8"
         >
-          {loading ? (
-            // Skeleton that matches the empty state layout
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <div className="h-7 w-32 bg-muted animate-pulse mx-auto mb-2"></div>
-                <div className="h-5 w-56 bg-muted animate-pulse mx-auto"></div>
+          <div className="max-w-3xl mx-auto">
+            {loading ? (
+              // Skeleton that matches the empty state layout
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="h-7 w-32 bg-muted animate-pulse mx-auto mb-2"></div>
+                  <div className="h-5 w-56 bg-muted animate-pulse mx-auto"></div>
+                </div>
               </div>
-            </div>
-          ) : messages.length === 0 && !streamingContent && streamingToolCalls.length === 0 ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <p className="text-lg mb-2">Ready to learn!</p>
-                <p className="text-sm">Tell me what you&apos;d like to learn today.</p>
+            ) : messages.length === 0 && !streamingContent && streamingToolCalls.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <p className="text-lg mb-2">Ready to learn!</p>
+                  <p className="text-sm">Tell me what you&apos;d like to learn today.</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <MessageList
-              messages={messages}
-              exercises={exercises}
-              streamingContent={streamingContent}
-              streamingToolCalls={streamingToolCalls}
-              streamingContentBlocks={streamingContentBlocks}
-              isStreaming={isStreaming}
-            />
-          )}
+            ) : (
+              <MessageList
+                messages={messages}
+                exercises={exercises}
+                streamingContent={streamingContent}
+                streamingToolCalls={streamingToolCalls}
+                streamingContentBlocks={streamingContentBlocks}
+                isStreaming={isStreaming}
+              />
+            )}
+          </div>
         </ScrollArea>
       </div>
 
       {/* Exercise Panel - shows when there's an active exercise */}
       {activeExercise && (
         <div className="border-t border-border">
-          <ExercisePanel
-            exercise={activeExercise}
-            onSubmit={onExerciseSubmit || (() => {})}
-            onSkip={onExerciseSkip || (() => {})}
-            onReset={onExerciseReset || (() => {})}
-            disabled={isStreaming}
-          />
+          <div className="max-w-3xl mx-auto">
+            <ExercisePanel
+              exercise={activeExercise}
+              onSubmit={onExerciseSubmit || (() => {})}
+              onSkip={onExerciseSkip || (() => {})}
+              onReset={onExerciseReset || (() => {})}
+              disabled={isStreaming}
+            />
+          </div>
         </div>
       )}
 
       {/* Input */}
       <div className="px-4 pb-4">
-        <MessageInput onSend={onSendMessage} disabled={isStreaming} />
+        <div className="max-w-3xl mx-auto">
+          <MessageInput onSend={onSendMessage} disabled={isStreaming} />
+        </div>
       </div>
     </div>
   );

@@ -54,6 +54,7 @@ export function useChat({
   const [streamingContentBlocks, setStreamingContentBlocks] = useState<ContentBlock[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
+  const [exercises, setExercises] = useState<Record<string, Exercise>>({});
   const abortControllerRef = useRef<AbortController | null>(null);
   const titleGeneratedRef = useRef(false);
   const messagesRef = useRef<Message[]>([]);
@@ -99,6 +100,8 @@ export function useChat({
       const toolCallMap = new Map<string, ToolCall>();
       // Track content blocks in order
       const contentBlocksList: ContentBlock[] = [];
+      // Track pending exercise fetches to ensure they complete before finalizing message
+      const pendingExerciseFetches: Promise<void>[] = [];
       let currentTextBlock: { type: "text"; text: string } | null = null;
 
       // Helper function to update content blocks state
@@ -160,23 +163,54 @@ export function useChat({
               existingCall.status === "completed" &&
               existingCall.output
             ) {
-              try {
-                const result = JSON.parse(existingCall.output);
-                if (result.exerciseId) {
-                  // Fetch fresh session to get the exercise
-                  const response = await fetch(`/api/projects/${projectId}/sessions/${sessionId}`);
-                  if (response.ok) {
-                    const session = await response.json();
-                    const exercise = session.exercises?.[result.exerciseId];
-                    if (exercise) {
-                      setActiveExercise(exercise);
-                      onExerciseCreated?.(exercise);
+              // Track this fetch so we can await it before finalizing the message
+              const fetchPromise = (async () => {
+                try {
+                  const result = JSON.parse(existingCall.output);
+                  if (result.exerciseId) {
+                    // Retry fetching session a few times with delay to handle race condition
+                    // where the MCP tool has written to disk but read returns stale data
+                    let exercise = null;
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                      if (attempt > 0) {
+                        await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
+                      }
+
+                      const response = await fetch(
+                        `/api/projects/${projectId}/sessions/${sessionId}`,
+                        { cache: "no-store" }
+                      );
+
+                      if (response.ok) {
+                        const session = await response.json();
+
+                        // Update the full exercises map
+                        if (session.exercises && Object.keys(session.exercises).length > 0) {
+                          setExercises(session.exercises);
+                        }
+
+                        exercise = session.exercises?.[result.exerciseId];
+
+                        if (exercise) {
+                          setActiveExercise(exercise);
+                          onExerciseCreated?.(exercise);
+                          break;
+                        }
+                      }
+                    }
+
+                    if (!exercise) {
+                      console.warn(
+                        "[useChat] Exercise not found after retries:",
+                        result.exerciseId
+                      );
                     }
                   }
+                } catch (e) {
+                  console.error("Failed to parse exercise creation result:", e);
                 }
-              } catch (e) {
-                console.error("Failed to parse exercise creation result:", e);
-              }
+              })();
+              pendingExerciseFetches.push(fetchPromise);
             }
           }
         }
@@ -324,6 +358,12 @@ export function useChat({
         // Finalize content blocks - add any remaining text block
         if (currentTextBlock && currentTextBlock.text) {
           contentBlocksList.push(currentTextBlock);
+        }
+
+        // Wait for any pending exercise fetches to complete before updating messages
+        // This ensures exercises are in state when the message renders
+        if (pendingExerciseFetches.length > 0) {
+          await Promise.all(pendingExerciseFetches);
         }
 
         if (accumulatedContent || finalToolCalls.length > 0) {
@@ -522,6 +562,8 @@ ${code}
     loadMessages,
     activeExercise,
     setActiveExercise,
+    exercises,
+    setExercises,
     submitExercise,
     skipExercise,
   };

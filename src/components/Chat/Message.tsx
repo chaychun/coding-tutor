@@ -1,9 +1,30 @@
 "use client";
 
-import type { Message, Exercise } from "@/lib/types";
+import type { Message, Exercise, ToolCall } from "@/lib/types";
 import { MarkdownContent } from "./MarkdownContent";
 import { ToolCallBlock } from "./ToolCallBlock";
 import { ExerciseSubmissionCard } from "./ExerciseSubmissionCard";
+import ExerciseBlock from "./ExerciseBlock";
+
+/**
+ * Extract exerciseId from a create_exercise tool call output
+ */
+function getExerciseIdFromToolCall(toolCall: ToolCall): string | null {
+  if (
+    toolCall.name !== "mcp__coding-tutor__create_exercise" ||
+    toolCall.status !== "completed" ||
+    !toolCall.output
+  ) {
+    return null;
+  }
+
+  try {
+    const result = JSON.parse(toolCall.output);
+    return result.exerciseId ?? null;
+  } catch {
+    return null;
+  }
+}
 
 interface ChatMessageProps {
   message: Message;
@@ -44,7 +65,14 @@ export default function ChatMessage({ message, exercises }: ChatMessageProps) {
                 );
               }
               if (block.type === "tool_call") {
-                return <ToolCallBlock key={block.toolCall.id} toolCall={block.toolCall} />;
+                const exerciseId = getExerciseIdFromToolCall(block.toolCall);
+                const exercise = exerciseId ? exercises?.[exerciseId] : null;
+                return (
+                  <div key={block.toolCall.id}>
+                    <ToolCallBlock toolCall={block.toolCall} />
+                    {exercise && <ExerciseBlock exercise={exercise} />}
+                  </div>
+                );
               }
               return null;
             })}
@@ -64,9 +92,16 @@ export default function ChatMessage({ message, exercises }: ChatMessageProps) {
       >
         <div className="space-y-2">
           {/* Tool calls */}
-          {message.toolCalls?.map((toolCall) => (
-            <ToolCallBlock key={toolCall.id} toolCall={toolCall} />
-          ))}
+          {message.toolCalls?.map((toolCall) => {
+            const exerciseId = getExerciseIdFromToolCall(toolCall);
+            const exercise = exerciseId ? exercises?.[exerciseId] : null;
+            return (
+              <div key={toolCall.id}>
+                <ToolCallBlock toolCall={toolCall} />
+                {exercise && <ExerciseBlock exercise={exercise} />}
+              </div>
+            );
+          })}
 
           {/* Message content with markdown */}
           {message.content && (

@@ -64,7 +64,7 @@ Provide a helpful hint that guides them toward the solution without giving away 
               "WebSearch",
               "WebFetch",
             ],
-            systemPrompt: getTutorSystemPrompt(projectId),
+            systemPrompt: getTutorSystemPrompt(projectId, sessionId),
             resume: resumeSessionId,
             permissionMode: "bypassPermissions",
             maxTurns: 10,

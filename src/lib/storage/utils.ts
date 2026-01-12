@@ -1,6 +1,28 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 
+// Simple file lock implementation to prevent concurrent writes
+const fileLocks = new Map<string, Promise<void>>();
+
+async function acquireLock(filePath: string): Promise<() => void> {
+  // Wait for any existing lock on this file
+  while (fileLocks.has(filePath)) {
+    await fileLocks.get(filePath);
+  }
+
+  // Create a new lock
+  let releaseLock: () => void;
+  const lockPromise = new Promise<void>((resolve) => {
+    releaseLock = resolve;
+  });
+  fileLocks.set(filePath, lockPromise);
+
+  return () => {
+    fileLocks.delete(filePath);
+    releaseLock!();
+  };
+}
+
 // Get the data path from environment or use default
 export function getDataPath(): string {
   // In development, use .dev-data in the project root
@@ -39,10 +61,39 @@ export async function readJsonFile<T>(filePath: string): Promise<T | null> {
   }
 }
 
-// Write JSON file with directory creation
+// Atomic read-modify-write operation with file locking
+export async function updateJsonFile<T>(
+  filePath: string,
+  updater: (current: T | null) => T | null
+): Promise<T | null> {
+  const release = await acquireLock(filePath);
+  try {
+    const current = await readJsonFile<T>(filePath);
+    const updated = updater(current);
+    if (updated !== null) {
+      await ensureDir(path.dirname(filePath));
+      const tempPath = `${filePath}.tmp.${Date.now()}`;
+      await fs.writeFile(tempPath, JSON.stringify(updated, null, 2), "utf-8");
+      await fs.rename(tempPath, filePath);
+    }
+    return updated;
+  } finally {
+    release();
+  }
+}
+
+// Write JSON file with directory creation and atomic write
 export async function writeJsonFile<T>(filePath: string, data: T): Promise<void> {
-  await ensureDir(path.dirname(filePath));
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
+  const release = await acquireLock(filePath);
+  try {
+    await ensureDir(path.dirname(filePath));
+    // Write to temp file first, then rename for atomic operation
+    const tempPath = `${filePath}.tmp.${Date.now()}`;
+    await fs.writeFile(tempPath, JSON.stringify(data, null, 2), "utf-8");
+    await fs.rename(tempPath, filePath);
+  } finally {
+    release();
+  }
 }
 
 // List directories in a directory (filters out files like .DS_Store)

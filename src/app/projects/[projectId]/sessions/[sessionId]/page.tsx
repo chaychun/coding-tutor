@@ -45,6 +45,8 @@ export default function SessionPage({ params }: PageProps) {
     loadMessages,
     activeExercise,
     setActiveExercise,
+    exercises,
+    setExercises,
     submitExercise,
     skipExercise,
   } = useChat({
@@ -67,15 +69,18 @@ export default function SessionPage({ params }: PageProps) {
     selectSession(projectId, sessionId);
   }, [projectId, sessionId, selectSession]);
 
-  // Load session messages when currentSession is available
+  // Load session messages and exercises when currentSession is available
   useEffect(() => {
     if (currentSession) {
       loadMessages(currentSession.messages);
+      if (currentSession.exercises) {
+        setExercises(currentSession.exercises);
+      }
       if (currentSession.agentSessionId) {
         setAgentSessionId(currentSession.agentSessionId);
       }
     }
-  }, [currentSession, loadMessages]);
+  }, [currentSession, loadMessages, setExercises]);
 
   // Restore active exercise when session loads
   useEffect(() => {
@@ -142,55 +147,53 @@ export default function SessionPage({ params }: PageProps) {
   );
 
   return (
-    <main className="flex flex-col h-svh overflow-hidden">
-      <SidebarProvider>
-        <AppSidebar
-          projects={projects}
-          sessions={sessions}
-          currentProjectId={projectId}
-          currentSessionId={sessionId}
-          loading={projectsLoading}
-          onSelectProject={handleSelectProject}
-          onSelectSession={handleSelectSession}
-          onCreateProject={handleCreateProject}
-          onCreateSession={handleCreateSession}
-          onRenameProject={handleRenameProject}
-          onRenameSession={handleRenameSession}
-        />
-        <SidebarInset className="flex flex-col overflow-hidden">
-          {/* Loading State */}
-          {sessionLoading && !currentSession ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <Spinner size={32} className="mx-auto mb-4" />
-                <p className="text-muted-foreground">Loading session...</p>
-              </div>
+    <SidebarProvider className="h-svh overflow-hidden">
+      <AppSidebar
+        projects={projects}
+        sessions={sessions}
+        currentProjectId={projectId}
+        currentSessionId={sessionId}
+        loading={projectsLoading}
+        onSelectProject={handleSelectProject}
+        onSelectSession={handleSelectSession}
+        onCreateProject={handleCreateProject}
+        onCreateSession={handleCreateSession}
+        onRenameProject={handleRenameProject}
+        onRenameSession={handleRenameSession}
+      />
+      <SidebarInset className="flex flex-col overflow-hidden">
+        {/* Loading State */}
+        {sessionLoading && !currentSession ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <Spinner size={32} className="mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading session...</p>
             </div>
-          ) : sessionError ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <p className="text-destructive mb-4">Error: {sessionError}</p>
-                <Button onClick={() => selectSession(projectId, sessionId)}>Retry</Button>
-              </div>
+          </div>
+        ) : sessionError ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <p className="text-destructive mb-4">Error: {sessionError}</p>
+              <Button onClick={() => selectSession(projectId, sessionId)}>Retry</Button>
             </div>
-          ) : (
-            <Chat
-              messages={messages}
-              exercises={currentSession?.exercises}
-              isStreaming={isStreaming}
-              streamingContent={streamingContent}
-              streamingToolCalls={streamingToolCalls}
-              streamingContentBlocks={streamingContentBlocks}
-              loading={sessionLoading || !currentSession}
-              onSendMessage={handleSendMessage}
-              activeExercise={activeExercise}
-              onExerciseSubmit={submitExercise}
-              onExerciseSkip={skipExercise}
-              onExerciseReset={() => {}}
-            />
-          )}
-        </SidebarInset>
-      </SidebarProvider>
-    </main>
+          </div>
+        ) : (
+          <Chat
+            messages={messages}
+            exercises={exercises}
+            isStreaming={isStreaming}
+            streamingContent={streamingContent}
+            streamingToolCalls={streamingToolCalls}
+            streamingContentBlocks={streamingContentBlocks}
+            loading={sessionLoading || !currentSession}
+            onSendMessage={handleSendMessage}
+            activeExercise={activeExercise}
+            onExerciseSubmit={submitExercise}
+            onExerciseSkip={skipExercise}
+            onExerciseReset={() => {}}
+          />
+        )}
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

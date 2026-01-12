@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import * as storage from "@/lib/storage";
 
+// Force dynamic to prevent any caching
+export const dynamic = "force-dynamic";
+
 interface RouteParams {
   params: Promise<{ projectId: string; sessionId: string }>;
 }
@@ -15,7 +18,11 @@ export async function GET(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    return NextResponse.json(session);
+    return NextResponse.json(session, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    });
   } catch (error) {
     console.error("Error getting session:", error);
     return NextResponse.json({ error: "Failed to get session" }, { status: 500 });
