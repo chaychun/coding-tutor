@@ -6,6 +6,72 @@ import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ExercisePanel from "@/components/Exercise/ExercisePanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { GraduationCap, Code, Lightning, BookOpen } from "@phosphor-icons/react";
+
+const suggestions = [
+  {
+    icon: Code,
+    title: "Python basics",
+    description: "Variables, loops, and functions",
+  },
+  {
+    icon: Lightning,
+    title: "JavaScript fundamentals",
+    description: "DOM, events, and async",
+  },
+  {
+    icon: BookOpen,
+    title: "Data structures",
+    description: "Arrays, trees, and graphs",
+  },
+];
+
+function EmptyState({
+  onSuggestionClick,
+  onSendMessage,
+}: {
+  onSuggestionClick: (message: string) => void;
+  onSendMessage: (message: string) => void;
+}) {
+  return (
+    <div className="min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center gap-6 w-full max-w-xl">
+        {/* Icon */}
+        <div className="p-4 bg-primary/10 text-primary">
+          <GraduationCap size={48} weight="duotone" />
+        </div>
+
+        {/* Text */}
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Ready to learn?</h2>
+          <p className="text-muted-foreground">
+            Ask me anything about programming. I&apos;ll explain concepts and give you exercises to
+            practice.
+          </p>
+        </div>
+
+        {/* Centered Input */}
+        <div className="w-full">
+          <MessageInput onSend={onSendMessage} />
+        </div>
+
+        {/* Subtle Suggestions */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion.title}
+              onClick={() => onSuggestionClick(`Teach me ${suggestion.title.toLowerCase()}`)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border"
+            >
+              <suggestion.icon size={14} weight="bold" />
+              {suggestion.title}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface ChatProps {
   messages: Message[];
@@ -64,6 +130,9 @@ export default function Chat({
     }
   }, [streamingContent]);
 
+  const isEmptyState =
+    !loading && messages.length === 0 && !streamingContent && streamingToolCalls.length === 0;
+
   return (
     <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       {/* Messages */}
@@ -83,13 +152,8 @@ export default function Chat({
                   <div className="h-5 w-56 bg-muted animate-pulse mx-auto"></div>
                 </div>
               </div>
-            ) : messages.length === 0 && !streamingContent && streamingToolCalls.length === 0 ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <p className="text-lg mb-2">Ready to learn!</p>
-                  <p className="text-sm">Tell me what you&apos;d like to learn today.</p>
-                </div>
-              </div>
+            ) : isEmptyState ? (
+              <EmptyState onSuggestionClick={onSendMessage} onSendMessage={onSendMessage} />
             ) : (
               <MessageList
                 messages={messages}
@@ -119,12 +183,14 @@ export default function Chat({
         </div>
       )}
 
-      {/* Input */}
-      <div className="px-4 pb-4">
-        <div className="max-w-3xl mx-auto">
-          <MessageInput onSend={onSendMessage} disabled={isStreaming} />
+      {/* Input - hidden when showing empty state (input is embedded there) */}
+      {!isEmptyState && (
+        <div className="px-4 pb-4">
+          <div className="max-w-3xl mx-auto">
+            <MessageInput onSend={onSendMessage} disabled={isStreaming} />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
