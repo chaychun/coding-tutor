@@ -16,7 +16,6 @@ import {
   CaretUp,
   ArrowClockwise,
   X,
-  Sparkle,
 } from "@phosphor-icons/react";
 
 interface ExerciseSubmissionCardProps {
@@ -180,10 +179,10 @@ export function ExerciseSubmissionCard({
         return (
           <Badge
             variant="secondary"
-            className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+            className="bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/30 dark:text-fuchsia-300"
           >
-            <Sparkle className="w-3 h-3 mr-1" />
-            Passed
+            <Check className="w-3 h-3 mr-1" />
+            Passed with feedback
           </Badge>
         );
       default:
