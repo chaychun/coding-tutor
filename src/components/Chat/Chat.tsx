@@ -1,11 +1,14 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
 import type { Message, Exercise, ToolCall, ContentBlock } from "@/lib/types";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ExercisePanel from "@/components/Exercise/ExercisePanel";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  ChatContainerRoot,
+  ChatContainerContent,
+} from "@/components/ui/chat-container";
+import { ScrollButton } from "@/components/ui/scroll-button";
 import { GraduationCap, Code, Lightning, BookOpen } from "@phosphor-icons/react";
 
 const suggestions = [
@@ -114,32 +117,6 @@ export default function Chat({
   onExerciseRetry,
   className = "",
 }: ChatProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const isUserScrolledUpRef = useRef(false);
-
-  // Track if user has scrolled up from bottom
-  const handleScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    // Consider "at bottom" if within 100px of the bottom
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
-    isUserScrolledUpRef.current = !isAtBottom;
-  }, []);
-
-  // Auto-scroll to bottom when content changes, but only if user hasn't scrolled up
-  useEffect(() => {
-    if (scrollRef.current && !isUserScrolledUpRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, streamingToolCalls.length]);
-
-  // Also scroll on streaming content updates, but only if user hasn't scrolled up
-  useEffect(() => {
-    if (scrollRef.current && !isUserScrolledUpRef.current && streamingContent) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [streamingContent]);
-
   const isEmptyState =
     !loading && messages.length === 0 && !streamingContent && streamingToolCalls.length === 0;
 
@@ -147,36 +124,37 @@ export default function Chat({
     <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       {/* Messages */}
       <div className="relative flex-1 min-h-0">
-        <ScrollArea
-          className="h-full"
-          viewportRef={scrollRef}
-          onScroll={handleScroll}
-          viewportClassName="px-4 pt-4 pb-8"
-        >
-          <div className="max-w-3xl mx-auto">
-            {loading ? (
-              // Skeleton that matches the empty state layout
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <div className="h-7 w-32 bg-muted animate-pulse mx-auto mb-2"></div>
-                  <div className="h-5 w-56 bg-muted animate-pulse mx-auto"></div>
+        <ChatContainerRoot className="h-full">
+          <ChatContainerContent className="px-4 pt-4 pb-8">
+            <div className="max-w-3xl mx-auto">
+              {loading ? (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="h-7 w-32 bg-muted animate-pulse mx-auto mb-2"></div>
+                    <div className="h-5 w-56 bg-muted animate-pulse mx-auto"></div>
+                  </div>
                 </div>
-              </div>
-            ) : isEmptyState ? (
-              <EmptyState onSuggestionClick={onSendMessage} onSendMessage={onSendMessage} />
-            ) : (
-              <MessageList
-                messages={messages}
-                exercises={exercises}
-                streamingContent={streamingContent}
-                streamingToolCalls={streamingToolCalls}
-                streamingContentBlocks={streamingContentBlocks}
-                isStreaming={isStreaming}
-                onExerciseRetry={onExerciseRetry}
-              />
-            )}
+              ) : isEmptyState ? (
+                <EmptyState onSuggestionClick={onSendMessage} onSendMessage={onSendMessage} />
+              ) : (
+                <MessageList
+                  messages={messages}
+                  exercises={exercises}
+                  streamingContent={streamingContent}
+                  streamingToolCalls={streamingToolCalls}
+                  streamingContentBlocks={streamingContentBlocks}
+                  isStreaming={isStreaming}
+                  onExerciseRetry={onExerciseRetry}
+                />
+              )}
+            </div>
+          </ChatContainerContent>
+          <div className="absolute bottom-4 left-0 right-0 pointer-events-none">
+            <div className="max-w-3xl mx-auto px-4 flex justify-end">
+              <ScrollButton className="pointer-events-auto" />
+            </div>
           </div>
-        </ScrollArea>
+        </ChatContainerRoot>
       </div>
 
       {/* Exercise Panel - shows when there's an active exercise */}

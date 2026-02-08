@@ -5,24 +5,22 @@ import type { ToolCall } from "@/lib/types";
 import { Button, Spinner, ScrollArea } from "@/components/ui";
 import { CaretDown, CaretRight, Check, X } from "@phosphor-icons/react";
 
-interface ToolCallBlockProps {
+interface ToolProps {
   toolCall: ToolCall;
 }
 
 const OUTPUT_PREVIEW_LIMIT = 500;
 
-export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
+function Tool({ toolCall }: ToolProps) {
   const [isExpanded, setIsExpanded] = useState(toolCall.status === "error");
   const [showFullOutput, setShowFullOutput] = useState(false);
 
-  // Auto-expand when status changes to error
   useEffect(() => {
     if (toolCall.status === "error") {
       setIsExpanded(true);
     }
   }, [toolCall.status]);
 
-  // Format tool name for display (remove mcp__ prefix)
   const displayName = toolCall.name.replace(/^mcp__[^_]+__/, "");
 
   const renderStatusIcon = () => {
@@ -58,11 +56,8 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
 
       {isExpanded && (
         <div className="border-t border-border">
-          {/* Input Section */}
           <div className="px-3 py-2.5">
-            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
-              Input
-            </div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Input</div>
             <ScrollArea orientation="horizontal" className="bg-muted/50">
               <pre className="p-3 text-xs font-mono whitespace-pre-wrap break-all">
                 {JSON.stringify(toolCall.input, null, 2)}
@@ -70,12 +65,9 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
             </ScrollArea>
           </div>
 
-          {/* Output Section */}
           {toolCall.output && (
             <div className="px-3 py-2.5 border-t border-border">
-              <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                Output
-              </div>
+              <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Output</div>
               <ScrollArea orientation="both" className="max-h-48 bg-muted/50">
                 <pre className="p-3 text-xs font-mono whitespace-pre-wrap break-all">
                   {showFullOutput || toolCall.output.length <= OUTPUT_PREVIEW_LIMIT
@@ -99,12 +91,9 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
             </div>
           )}
 
-          {/* Error Section */}
           {toolCall.error && (
             <div className="px-3 py-2.5 border-t border-border bg-destructive/5">
-              <div className="text-[10px] font-medium uppercase tracking-wider text-destructive mb-2">
-                Error
-              </div>
+              <div className="text-[10px] font-medium uppercase tracking-wider text-destructive mb-2">Error</div>
               <p className="text-xs text-destructive">{toolCall.error}</p>
             </div>
           )}
@@ -113,3 +102,5 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
     </div>
   );
 }
+
+export { Tool };

@@ -125,6 +125,11 @@
   }
 }
 
+/* Override use-stick-to-bottom's scrollbar-gutter: stable both-edges */
+.scrollbar-gutter-auto {
+  scrollbar-gutter: auto !important;
+}
+
 /* Streaming cursor — blinking caret at the end of streaming text */
 .streaming-cursor > :last-child {
   display: inline;

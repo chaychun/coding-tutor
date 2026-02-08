@@ -4,6 +4,7 @@ import { useRef, useEffect } from "react";
 import type { Message, Exercise, ToolCall, ContentBlock } from "@/lib/types";
 import ChatMessage from "./Message";
 import ExerciseBlock from "./ExerciseBlock";
+import { Loader } from "@/components/ui/loader";
 
 interface MessageListProps {
   messages: Message[];
@@ -40,7 +41,7 @@ export default function MessageList({
   }, [messages.length]);
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       {messages.map((message, index) => (
         <div
           key={message.id}
@@ -72,20 +73,7 @@ export default function MessageList({
       {/* Show typing indicator */}
       {isStreaming && !streamingContent && streamingToolCalls.length === 0 && (
         <div className="flex items-center gap-2 text-muted-foreground animate-in fade-in duration-200">
-          <div className="flex gap-1">
-            <span
-              className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce"
-              style={{ animationDelay: "0ms" }}
-            />
-            <span
-              className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce"
-              style={{ animationDelay: "150ms" }}
-            />
-            <span
-              className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce"
-              style={{ animationDelay: "300ms" }}
-            />
-          </div>
+          <Loader variant="typing" size="sm" />
           <span className="text-xs">Thinking...</span>
         </div>
       )}

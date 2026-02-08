@@ -1,7 +1,7 @@
 "use client";
 
 import type { Exercise } from "@/lib/types";
-import { MarkdownContent } from "./MarkdownContent";
+import { Markdown } from "@/components/ui/markdown";
 
 interface ExerciseBlockProps {
   exercise: Exercise;
@@ -25,7 +25,7 @@ export default function ExerciseBlock({ exercise }: ExerciseBlockProps) {
             Instructions
           </h4>
           <div className="text-sm">
-            <MarkdownContent content={exercise.instructions} />
+            <Markdown>{exercise.instructions}</Markdown>
           </div>
         </div>
 
@@ -34,7 +34,7 @@ export default function ExerciseBlock({ exercise }: ExerciseBlockProps) {
             Expected Behavior
           </h4>
           <div className="text-sm text-muted-foreground">
-            <MarkdownContent content={exercise.expectedBehavior} />
+            <Markdown>{exercise.expectedBehavior}</Markdown>
           </div>
         </div>
       </div>

@@ -1,8 +1,8 @@
 "use client";
 
 import type { Message, Exercise, ToolCall } from "@/lib/types";
-import { MarkdownContent } from "./MarkdownContent";
-import { ToolCallBlock } from "./ToolCallBlock";
+import { Markdown } from "@/components/ui/markdown";
+import { Tool } from "@/components/ui/tool";
 import { ExerciseSubmissionCard } from "./ExerciseSubmissionCard";
 import ExerciseBlock from "./ExerciseBlock";
 import { useStreamBuffer } from "@/hooks/useStreamBuffer";
@@ -70,11 +70,9 @@ export default function ChatMessage({ message, exercises, onRetry }: ChatMessage
     let charBudget = isStreaming ? bufferedText.length : Infinity;
 
     return (
-      <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
         <div
-          className={`max-w-[85%] px-4 py-2 ${
-            isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-          }`}
+          className={`${isUser ? "max-w-[85%] px-4 py-2 bg-primary text-primary-foreground" : "w-[80%] text-foreground"}`}
         >
           <div className="space-y-2">
             {message.contentBlocks.map((block, index) => {
@@ -97,7 +95,7 @@ export default function ChatMessage({ message, exercises, onRetry }: ChatMessage
                     key={`text-${index}`}
                     className={`text-sm ${isStreaming && isLastText && displayText ? "streaming-cursor" : ""}`}
                   >
-                    <MarkdownContent content={displayText} />
+                    <Markdown id={message.id}>{displayText}</Markdown>
                   </div>
                 );
               }
@@ -106,7 +104,7 @@ export default function ChatMessage({ message, exercises, onRetry }: ChatMessage
                 const exercise = exerciseId ? exercises?.[exerciseId] : null;
                 return (
                   <div key={block.toolCall.id}>
-                    <ToolCallBlock toolCall={block.toolCall} />
+                    <Tool toolCall={block.toolCall} />
                     {exercise && <ExerciseBlock exercise={exercise} />}
                   </div>
                 );
@@ -121,10 +119,10 @@ export default function ChatMessage({ message, exercises, onRetry }: ChatMessage
 
   // Fallback to legacy rendering (tool calls first, then content)
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+    <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[85%] px-4 py-2 ${
-          isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+          isUser ? "bg-primary text-primary-foreground" : "text-foreground"
         }`}
       >
         <div className="space-y-2">
@@ -134,7 +132,7 @@ export default function ChatMessage({ message, exercises, onRetry }: ChatMessage
             const exercise = exerciseId ? exercises?.[exerciseId] : null;
             return (
               <div key={toolCall.id}>
-                <ToolCallBlock toolCall={toolCall} />
+                <Tool toolCall={toolCall} />
                 {exercise && <ExerciseBlock exercise={exercise} />}
               </div>
             );
@@ -143,7 +141,7 @@ export default function ChatMessage({ message, exercises, onRetry }: ChatMessage
           {/* Message content with markdown */}
           {(isStreaming ? bufferedText : message.content) && (
             <div className={`text-sm ${isStreaming ? "streaming-cursor" : ""}`}>
-              <MarkdownContent content={isStreaming ? bufferedText : (message.content || "")} />
+              <Markdown id={message.id}>{isStreaming ? bufferedText : (message.content || "")}</Markdown>
             </div>
           )}
         </div>
