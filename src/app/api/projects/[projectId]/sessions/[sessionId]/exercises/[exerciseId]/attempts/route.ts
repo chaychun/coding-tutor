@@ -15,7 +15,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     const { projectId, sessionId, exerciseId } = await params;
     const body = await request.json();
 
-    const { attemptId, code } = body;
+    const { attemptId, code, blankValues } = body;
 
     if (!attemptId || typeof code !== "string") {
       return NextResponse.json({ error: "attemptId and code are required" }, { status: 400 });
@@ -26,7 +26,8 @@ export async function POST(request: Request, { params }: RouteParams) {
       sessionId,
       exerciseId,
       attemptId,
-      code
+      code,
+      blankValues
     );
 
     if (!attempt) {

@@ -297,7 +297,8 @@ export async function submitExerciseAttempt(
   sessionId: string,
   exerciseId: string,
   attemptId: string,
-  code: string
+  code: string,
+  blankValues?: Record<string, string>
 ): Promise<ExerciseAttempt | null> {
   const filePath = getSessionFilePath(projectId, sessionId);
   let createdAttempt: ExerciseAttempt | null = null;
@@ -317,6 +318,7 @@ export async function submitExerciseAttempt(
     const attempt: ExerciseAttempt = {
       id: attemptId,
       code,
+      blankValues,
       submittedAt: new Date().toISOString(),
       status: "pending_review",
     };

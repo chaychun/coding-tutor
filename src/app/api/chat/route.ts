@@ -26,11 +26,9 @@ export async function POST(request: Request) {
   const debugPrefix = testingMode ? `[DEBUG — Testing Mode]\nAction: ${action}\n` : "";
 
   if (action === "submit") {
-    promptText = `${debugPrefix}${testingMode ? `Editor code received:\n\`\`\`\n${editorCode}\n\`\`\`\n\n` : ""}The student has submitted their code for evaluation:
+    promptText = `${debugPrefix}${testingMode ? `Submission received:\n\`\`\`\n${editorCode}\n\`\`\`\n\n` : ""}The student has submitted their answer for evaluation:
 
-\`\`\`
 ${editorCode}
-\`\`\`
 
 Please evaluate this solution. Check if it meets the expected behavior, point out what was done correctly, explain any errors or areas for improvement, and decide the next step (another exercise, harder variant, or move on).`;
   } else if (action === "hint") {
