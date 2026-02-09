@@ -177,7 +177,7 @@ export default function Chat({
 
       {/* Input - hidden when showing empty state (input is embedded there) */}
       {!isEmptyState && (
-        <div className="px-4 pb-4">
+        <div className="relative z-10 px-4 pb-4">
           <div className="max-w-3xl mx-auto">
             <MessageInput onSend={onSendMessage} disabled={isStreaming} />
           </div>
