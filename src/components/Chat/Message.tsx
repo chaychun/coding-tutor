@@ -5,6 +5,7 @@ import { Markdown } from "@/components/ui/markdown";
 import { Tool } from "@/components/ui/tool";
 import { ExerciseSubmissionCard } from "./ExerciseSubmissionCard";
 import ExerciseBlock from "./ExerciseBlock";
+import ExerciseUpdateBlock from "./ExerciseUpdateBlock";
 import ConceptQuestionBlock from "./ConceptQuestionBlock";
 import { useStreamBuffer } from "@/hooks/useStreamBuffer";
 
@@ -46,6 +47,27 @@ function getQuestionIdFromToolCall(toolCall: ToolCall): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Extract update info from an update_exercise tool call
+ */
+function getExerciseUpdateFromToolCall(
+  toolCall: ToolCall
+): { exerciseId: string; status: string; hint?: string } | null {
+  if (toolCall.name !== "mcp__coding-tutor__update_exercise" || toolCall.status !== "completed") {
+    return null;
+  }
+
+  const input = toolCall.input as { exerciseId?: string; status?: string; hint?: string };
+  // Only render the card when there's an explicit status change
+  if (!input.exerciseId || !input.status) return null;
+
+  return {
+    exerciseId: input.exerciseId,
+    status: input.status,
+    hint: input.hint,
+  };
 }
 
 interface ChatMessageProps {
@@ -147,12 +169,21 @@ export default function ChatMessage({
               const exercise = exerciseId ? exercises?.[exerciseId] : null;
               const questionId = getQuestionIdFromToolCall(block.toolCall);
               const question = questionId ? conceptQuestions?.[questionId] : null;
+              const exerciseUpdate = getExerciseUpdateFromToolCall(block.toolCall);
+              const updateExercise = exerciseUpdate ? exercises?.[exerciseUpdate.exerciseId] : null;
               return (
                 <div key={block.toolCall.id}>
                   <Tool toolCall={block.toolCall} />
                   {exercise && <ExerciseBlock exercise={exercise} />}
                   {question && (
                     <ConceptQuestionBlock question={question} onAnswer={onConceptAnswer} />
+                  )}
+                  {exerciseUpdate && (
+                    <ExerciseUpdateBlock
+                      status={exerciseUpdate.status}
+                      hint={exerciseUpdate.hint}
+                      exerciseTitle={updateExercise?.title}
+                    />
                   )}
                 </div>
               );
@@ -192,12 +223,19 @@ export default function ChatMessage({
           const exercise = exerciseId ? exercises?.[exerciseId] : null;
           const questionId = getQuestionIdFromToolCall(toolCall);
           const question = questionId ? conceptQuestions?.[questionId] : null;
+          const exerciseUpdate = getExerciseUpdateFromToolCall(toolCall);
+          const updateExercise = exerciseUpdate ? exercises?.[exerciseUpdate.exerciseId] : null;
           return (
             <div key={toolCall.id}>
               <Tool toolCall={toolCall} />
               {exercise && <ExerciseBlock exercise={exercise} />}
-              {question && (
-                <ConceptQuestionBlock question={question} onAnswer={onConceptAnswer} />
+              {question && <ConceptQuestionBlock question={question} onAnswer={onConceptAnswer} />}
+              {exerciseUpdate && (
+                <ExerciseUpdateBlock
+                  status={exerciseUpdate.status}
+                  hint={exerciseUpdate.hint}
+                  exerciseTitle={updateExercise?.title}
+                />
               )}
             </div>
           );

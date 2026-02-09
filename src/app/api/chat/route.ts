@@ -57,10 +57,11 @@ Provide a helpful hint that guides them toward the solution without giving away 
       try {
         // Query the Claude Agent SDK with string prompt
         // Note: MCP servers work with string prompts too
-        // Track whether to stop after a concept question tool call.
-        // Once the AI calls ask_concept_question, we yield that message and any
-        // intermediate tool result messages, then break before the AI generates
-        // follow-up text — the student needs to answer first.
+        // Track whether to stop after a concept question or exercise tool call.
+        // Once the AI calls ask_concept_question or create_exercise, we yield
+        // that message and any intermediate tool result messages, then break
+        // before the AI generates follow-up text — the student needs to
+        // answer/interact first.
         let stopBeforeNextAssistant = false;
 
         for await (const sdkMessage of query({
@@ -88,8 +89,8 @@ Provide a helpful hint that guides them toward the solution without giving away 
         })) {
           const msg = sdkMessage as Record<string, unknown>;
 
-          // After concept question tool is processed, stop before AI generates
-          // follow-up text — the next assistant message would be the unwanted response
+          // After concept question or exercise tool is processed, stop before AI
+          // generates follow-up text — the next assistant message would be unwanted
           if (stopBeforeNextAssistant && msg.type === "assistant") {
             break;
           }
@@ -102,18 +103,36 @@ Provide a helpful hint that guides them toward the solution without giving away 
           });
           controller.enqueue(encoder.encode(`data: ${data}\n\n`));
 
-          // Detect ask_concept_question tool use in assistant messages
+          // Detect ask_concept_question or create_exercise tool use in assistant messages
           if (msg.type === "assistant") {
             const message = msg.message as
-              | { content?: Array<{ type: string; name?: string }> }
+              | {
+                  content?: Array<{
+                    type: string;
+                    name?: string;
+                    input?: Record<string, unknown>;
+                  }>;
+                }
               | undefined;
             if (message?.content) {
               for (const block of message.content) {
+                if (block.type !== "tool_use") continue;
+
+                // Always stop for concept questions and new exercises
                 if (
-                  block.type === "tool_use" &&
-                  block.name === "mcp__coding-tutor__ask_concept_question"
+                  block.name === "mcp__coding-tutor__ask_concept_question" ||
+                  block.name === "mcp__coding-tutor__create_exercise"
                 ) {
                   stopBeforeNextAssistant = true;
+                }
+
+                // For exercise updates, only stop on non-passing statuses
+                // (let the agent continue talking after "passed" to suggest next steps)
+                if (block.name === "mcp__coding-tutor__update_exercise") {
+                  const status = block.input?.status as string | undefined;
+                  if (status && status !== "passed" && status !== "passed_with_feedback") {
+                    stopBeforeNextAssistant = true;
+                  }
                 }
               }
             }

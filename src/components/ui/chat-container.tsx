@@ -29,10 +29,7 @@ function ChatContainerRoot({ children, className, ...props }: ChatContainerRootP
 
 function ChatContainerContent({ children, className, ...props }: ChatContainerContentProps) {
   return (
-    <StickToBottom.Content
-      className={cn("flex w-full flex-col", className)}
-      {...props}
-    >
+    <StickToBottom.Content className={cn("flex w-full flex-col", className)} {...props}>
       {children}
     </StickToBottom.Content>
   );
