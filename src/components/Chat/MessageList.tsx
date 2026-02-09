@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import type { Message, Exercise, ToolCall, ContentBlock, ConceptQuestion } from "@/lib/types";
 import ChatMessage from "./Message";
 import ExerciseBlock from "./ExerciseBlock";
-import { Loader } from "@/components/ui/loader";
+import { TextShimmer } from "@/components/motion-primitives/text-shimmer";
 
 interface MessageListProps {
   messages: Message[];
@@ -86,11 +86,12 @@ export default function MessageList({
         </div>
       )}
 
-      {/* Show typing indicator */}
+      {/* Show thinking indicator */}
       {isStreaming && !streamingContent && streamingToolCalls.length === 0 && (
-        <div className="flex items-center gap-2 text-muted-foreground animate-in fade-in duration-200">
-          <Loader variant="typing" size="sm" />
-          <span className="text-xs">Thinking...</span>
+        <div className="animate-in fade-in duration-300">
+          <TextShimmer duration={1.5} className="text-sm font-medium">
+            Thinking...
+          </TextShimmer>
         </div>
       )}
     </div>
