@@ -11,6 +11,7 @@ import type {
   ConceptQuestionAnswer,
 } from "@/lib/types";
 import { generateTitleFromMessage } from "@/lib/utils/generateTitle";
+import { sidecarFetch } from "@/lib/sidecar";
 
 interface SDKContentBlock {
   type: string;
@@ -122,7 +123,7 @@ export function useChat({
         }
 
         try {
-          const response = await fetch(`/api/projects/${projectId}/sessions/${sessionId}`, {
+          const response = await sidecarFetch(`/api/projects/${projectId}/sessions/${sessionId}`, {
             cache: "no-store",
             signal,
           });
@@ -352,7 +353,7 @@ export function useChat({
       };
 
       try {
-        const response = await fetch("/api/chat", {
+        const response = await sidecarFetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -520,7 +521,7 @@ export function useChat({
           setMessages(updatedMessages);
 
           // Persist messages and agentSessionId to storage (fire and forget, but with error handling)
-          fetch(`/api/projects/${projectId}/sessions/${sessionId}`, {
+          sidecarFetch(`/api/projects/${projectId}/sessions/${sessionId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -545,7 +546,7 @@ export function useChat({
             const firstUserMessage = updatedMessages.find((m) => m.role === "user");
             if (firstUserMessage) {
               const generatedTitle = generateTitleFromMessage(firstUserMessage.content);
-              fetch(`/api/projects/${projectId}/sessions/${sessionId}`, {
+              sidecarFetch(`/api/projects/${projectId}/sessions/${sessionId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title: generatedTitle }),
@@ -626,7 +627,7 @@ export function useChat({
 
       try {
         // Add attempt to storage and update exercise status to pending_review
-        const attemptResponse = await fetch(
+        const attemptResponse = await sidecarFetch(
           `/api/projects/${projectId}/sessions/${sessionId}/exercises/${exerciseToSubmit.id}/attempts`,
           {
             method: "POST",
@@ -679,7 +680,7 @@ export function useChat({
 
     // Update the exercise status to skipped via API
     try {
-      const response = await fetch(
+      const response = await sidecarFetch(
         `/api/projects/${projectId}/sessions/${sessionId}/exercises/${exerciseToSkip.id}/skip`,
         { method: "POST" }
       );
@@ -744,7 +745,7 @@ The student chose to skip this exercise. No code was submitted. The exercise sta
 
       // Persist to server so status survives page refresh
       try {
-        const response = await fetch(
+        const response = await sidecarFetch(
           `/api/projects/${projectId}/sessions/${sessionId}/exercises/${exerciseId}/retry`,
           { method: "POST" }
         );
@@ -781,7 +782,7 @@ The student chose to skip this exercise. No code was submitted. The exercise sta
 
       // Persist to server
       try {
-        await fetch(
+        await sidecarFetch(
           `/api/projects/${projectId}/sessions/${sessionId}/concept-questions/${questionId}/answer`,
           {
             method: "POST",

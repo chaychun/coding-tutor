@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { Project } from "@/lib/types";
+import { sidecarFetch } from "@/lib/sidecar";
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -12,7 +13,7 @@ export function useProjects() {
   const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/projects");
+      const response = await sidecarFetch("/api/projects");
       if (!response.ok) throw new Error("Failed to fetch projects");
       const data = await response.json();
       setProjects(data);
@@ -27,7 +28,7 @@ export function useProjects() {
   // Create a new project
   const createProject = useCallback(async (name: string, description?: string) => {
     try {
-      const response = await fetch("/api/projects", {
+      const response = await sidecarFetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, description }),
@@ -45,7 +46,7 @@ export function useProjects() {
   // Update a project
   const updateProject = useCallback(async (projectId: string, updates: Partial<Project>) => {
     try {
-      const response = await fetch(`/api/projects/${projectId}`, {
+      const response = await sidecarFetch(`/api/projects/${projectId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -63,7 +64,7 @@ export function useProjects() {
   // Delete a project
   const deleteProject = useCallback(async (projectId: string) => {
     try {
-      const response = await fetch(`/api/projects/${projectId}`, {
+      const response = await sidecarFetch(`/api/projects/${projectId}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Failed to delete project");

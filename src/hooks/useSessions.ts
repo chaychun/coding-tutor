@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type { Session } from "@/lib/types";
+import { sidecarFetch } from "@/lib/sidecar";
 
 export function useSessions(_projectId: string | null) {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -13,7 +14,7 @@ export function useSessions(_projectId: string | null) {
   const fetchSessions = useCallback(async (pid: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/projects/${pid}/sessions`);
+      const response = await sidecarFetch(`/api/projects/${pid}/sessions`);
       if (!response.ok) throw new Error("Failed to fetch sessions");
       const data: Session[] = await response.json();
       // Merge: keep sessions from other projects, replace sessions for this project
@@ -33,7 +34,7 @@ export function useSessions(_projectId: string | null) {
   const fetchSession = useCallback(async (pid: string, sessionId: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/projects/${pid}/sessions/${sessionId}`);
+      const response = await sidecarFetch(`/api/projects/${pid}/sessions/${sessionId}`);
       if (!response.ok) throw new Error("Failed to fetch session");
       const data = await response.json();
       setCurrentSession(data);
@@ -50,7 +51,7 @@ export function useSessions(_projectId: string | null) {
   // Create a new session
   const createSession = useCallback(async (pid: string, title?: string) => {
     try {
-      const response = await fetch(`/api/projects/${pid}/sessions`, {
+      const response = await sidecarFetch(`/api/projects/${pid}/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title }),
@@ -70,7 +71,7 @@ export function useSessions(_projectId: string | null) {
   const updateSession = useCallback(
     async (pid: string, sessionId: string, updates: Partial<Session>) => {
       try {
-        const response = await fetch(`/api/projects/${pid}/sessions/${sessionId}`, {
+        const response = await sidecarFetch(`/api/projects/${pid}/sessions/${sessionId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updates),

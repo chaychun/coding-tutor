@@ -220,7 +220,7 @@ The hooks (`useProjects`, `useSessions`, `useChat`) change their transport from 
 
 ```typescript
 // Before (Next.js)
-const res = await fetch('/api/projects');
+const res = await fetch("/api/projects");
 
 // After (Tauri + sidecar)
 const res = await fetch(`http://localhost:${sidecarPort}/api/projects`, {

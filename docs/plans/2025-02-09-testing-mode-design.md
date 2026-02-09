@@ -35,8 +35,8 @@ When `testingMode` is true and the action is `submit`, `hint`, or `concept_answe
 ## Files Changed
 
 1. `src/lib/agent/systemPrompt.ts` — add `testingMode` param, wrap prompt with preamble
-3. `src/app/api/chat/route.ts` — add `testingMode` to request interface, pass to system prompt, prepend debug echo
-4. `src/hooks/useChat.ts` — add `testingMode` param to `sendMessage`
-5. `src/app/projects/[projectId]/sessions/[sessionId]/page.tsx` — own `testingMode` state, pass through
-6. `src/components/Chat/Chat.tsx` — accept and pass `testingMode` + `onTestingModeChange`
-7. `src/components/Chat/MessageInput.tsx` — render toggle switch, gated by env var
+2. `src/app/api/chat/route.ts` — add `testingMode` to request interface, pass to system prompt, prepend debug echo
+3. `src/hooks/useChat.ts` — add `testingMode` param to `sendMessage`
+4. `src/app/projects/[projectId]/sessions/[sessionId]/page.tsx` — own `testingMode` state, pass through
+5. `src/components/Chat/Chat.tsx` — accept and pass `testingMode` + `onTestingModeChange`
+6. `src/components/Chat/MessageInput.tsx` — render toggle switch, gated by env var
