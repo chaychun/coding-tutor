@@ -65,6 +65,13 @@ export async function getSession(projectId: string, sessionId: string): Promise<
     session.conceptQuestions = {};
   }
 
+  // Migrate exercises missing `type` field — detect from starter code
+  for (const exercise of Object.values(session.exercises)) {
+    if (!exercise.type) {
+      exercise.type = exercise.starterCode?.includes("___") ? "fill_in_blank" : "write_code";
+    }
+  }
+
   return session;
 }
 
@@ -88,6 +95,13 @@ export async function updateSession(
     }
     if (!session.conceptQuestions) {
       session.conceptQuestions = {};
+    }
+
+    // Migrate exercises missing `type` field — detect from starter code
+    for (const exercise of Object.values(session.exercises)) {
+      if (!exercise.type) {
+        exercise.type = exercise.starterCode?.includes("___") ? "fill_in_blank" : "write_code";
+      }
     }
 
     return {
@@ -283,7 +297,8 @@ export async function submitExerciseAttempt(
   sessionId: string,
   exerciseId: string,
   attemptId: string,
-  code: string
+  code: string,
+  blankValues?: Record<string, string>
 ): Promise<ExerciseAttempt | null> {
   const filePath = getSessionFilePath(projectId, sessionId);
   let createdAttempt: ExerciseAttempt | null = null;
@@ -303,6 +318,7 @@ export async function submitExerciseAttempt(
     const attempt: ExerciseAttempt = {
       id: attemptId,
       code,
+      blankValues,
       submittedAt: new Date().toISOString(),
       status: "pending_review",
     };

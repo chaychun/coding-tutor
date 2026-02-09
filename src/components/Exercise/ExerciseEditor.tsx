@@ -4,31 +4,7 @@ import { useRef } from "react";
 import Editor, { OnMount } from "@monaco-editor/react";
 import type * as Monaco from "monaco-editor";
 import { useTheme } from "@/components/theme-provider";
-
-// Map language names to Monaco language identifiers
-const languageMap: Record<string, string> = {
-  swift: "swift",
-  python: "python",
-  typescript: "typescript",
-  javascript: "javascript",
-  ts: "typescript",
-  js: "javascript",
-  py: "python",
-  java: "java",
-  go: "go",
-  rust: "rust",
-  c: "c",
-  cpp: "cpp",
-  "c++": "cpp",
-  csharp: "csharp",
-  "c#": "csharp",
-  ruby: "ruby",
-  php: "php",
-  html: "html",
-  css: "css",
-  json: "json",
-  sql: "sql",
-};
+import { languageMap } from "./languageMap";
 
 interface ExerciseEditorProps {
   code: string;

@@ -12,6 +12,7 @@
         "@phosphor-icons/react": "^2.1.10",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "constrained-editor-plugin": "^1.4.0",
         "marked": "^17.0.1",
         "mermaid": "^11.12.2",
         "motion": "^12.33.0",
@@ -529,6 +530,8 @@
     "commander": ["commander@14.0.2", "", {}, "sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ=="],
 
     "confbox": ["confbox@0.1.8", "", {}, "sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w=="],
+
+    "constrained-editor-plugin": ["constrained-editor-plugin@1.4.0", "", {}, "sha512-OXZrivIHbMqFVDNF1/wBI3SBWQCPPesGoeBJ7Cev0KHnnxN9Oei2I8OXfOv5ROzliCXDYA5x4RWtDuByFDY2vQ=="],
 
     "content-disposition": ["content-disposition@1.0.1", "", {}, "sha512-oIXISMynqSqm241k6kcQ5UwttDILMK4BiurCfGEREw6+X9jkkpEe5T9FZaApyLGGOnFuyMWZpdolTXMtvEJ08Q=="],
 

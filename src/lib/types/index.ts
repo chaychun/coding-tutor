@@ -61,6 +61,9 @@ export type ExerciseStatus =
 
 export const MAX_EXERCISE_RETRIES = 3;
 
+export type ExerciseType = "write_code" | "fill_in_blank";
+export const DEFAULT_EXERCISE_TYPE: ExerciseType = "fill_in_blank";
+
 // Exercise attempt - tracks each submission with its evaluated status
 export interface ExerciseAttempt {
   id: string;
@@ -68,11 +71,13 @@ export interface ExerciseAttempt {
   submittedAt: string;
   status: ExerciseStatus; // Status of this specific attempt (mirrors exercise.status at evaluation time)
   feedback?: string;
+  blankValues?: Record<string, string>;
 }
 
 // Exercise types
 export interface Exercise {
   id: string;
+  type: ExerciseType;
   title: string;
   language: string;
   instructions: string;
@@ -118,6 +123,7 @@ export interface ExerciseSubmission {
   code: string;
   title: string;
   instructions: string;
+  blankValues?: Record<string, string>;
 }
 
 // Tool call types

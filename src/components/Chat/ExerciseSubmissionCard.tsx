@@ -37,7 +37,7 @@ export function ExerciseSubmissionCard({
   };
 
   // Count lines in code
-  const codeLines = submission.code.split("\n");
+  const codeLines = (submission.code || "").split("\n");
   const shouldCollapse = codeLines.length > 10;
   const [isExpanded, setIsExpanded] = useState(!shouldCollapse);
 
@@ -155,32 +155,47 @@ export function ExerciseSubmissionCard({
         </div>
       </CardHeader>
       {/* Hide code section for skipped exercises (no code was submitted) */}
-      {displayStatus !== "skipped" && submission.code && (
+      {displayStatus !== "skipped" && (submission.blankValues || submission.code) && (
         <CardContent className="pt-0">
-          <CodeBlock>
-            <CodeBlockHeader language={language} />
-            <CodeBlockCode code={displayCode} language={language || "text"} />
-          </CodeBlock>
-          {shouldCollapse && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full mt-2 text-xs"
-            >
-              {isExpanded ? (
-                <>
-                  <CaretUp className="w-3 h-3 mr-1" />
-                  Show less
-                </>
-              ) : (
-                <>
-                  <CaretDown className="w-3 h-3 mr-1" />
-                  Show more ({codeLines.length - 10} more lines)
-                </>
+          {submission.blankValues && Object.keys(submission.blankValues).length > 0 ? (
+            <div className="space-y-1.5">
+              {Object.entries(submission.blankValues)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([idx, value]) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm font-mono">
+                    <span className="text-muted-foreground text-xs">Blank {Number(idx) + 1}:</span>
+                    <code className="bg-muted px-2 py-0.5">{value}</code>
+                  </div>
+                ))}
+            </div>
+          ) : submission.code ? (
+            <>
+              <CodeBlock>
+                <CodeBlockHeader language={language} />
+                <CodeBlockCode code={displayCode} language={language || "text"} />
+              </CodeBlock>
+              {shouldCollapse && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="w-full mt-2 text-xs"
+                >
+                  {isExpanded ? (
+                    <>
+                      <CaretUp className="w-3 h-3 mr-1" />
+                      Show less
+                    </>
+                  ) : (
+                    <>
+                      <CaretDown className="w-3 h-3 mr-1" />
+                      Show more ({codeLines.length - 10} more lines)
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
-          )}
+            </>
+          ) : null}
         </CardContent>
       )}
     </Card>

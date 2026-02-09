@@ -100,7 +100,7 @@ interface ChatProps {
   loading?: boolean;
   onSendMessage: (message: string) => void;
   activeExercise?: Exercise | null;
-  onExerciseSubmit?: (code: string) => void;
+  onExerciseSubmit?: (code: string, blankValues?: Record<string, string>) => void;
   onExerciseSkip?: () => void;
   onExerciseReset?: () => void;
   onExerciseRetry?: (exerciseId: string, code: string) => void;

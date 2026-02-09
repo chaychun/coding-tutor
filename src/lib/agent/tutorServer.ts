@@ -117,6 +117,12 @@ export const tutorServer = createSdkMcpServer({
       {
         projectId: z.string().describe("The project identifier"),
         sessionId: z.string().describe("The session identifier"),
+        type: z
+          .enum(["write_code", "fill_in_blank"])
+          .default("fill_in_blank")
+          .describe(
+            "Exercise type: 'fill_in_blank' for blank markers (___), 'write_code' for free-form coding with // YOUR CODE HERE markers"
+          ),
         title: z.string().describe("The exercise title (e.g., 'Unwrapping Optionals')"),
         language: z
           .string()
@@ -134,14 +140,15 @@ export const tutorServer = createSdkMcpServer({
           ),
       },
       async (args) => {
-        // Validate starterCode contains at least one blank marker
-        if (!args.starterCode.includes("___")) {
+        // Validate starterCode contains at least one blank marker for fill-in-blank exercises
+        if (args.type === "fill_in_blank" && !args.starterCode.includes("___")) {
           return {
             content: [
               {
                 type: "text" as const,
                 text: JSON.stringify({
-                  error: "Starter code must contain at least one blank marker (___)",
+                  error:
+                    "Fill-in-blank exercises must contain at least one blank marker (___) in starter code",
                 }),
               },
             ],
@@ -154,6 +161,7 @@ export const tutorServer = createSdkMcpServer({
         // Create exercise object
         const exercise: Exercise = {
           id: exerciseId,
+          type: args.type,
           title: args.title,
           language: args.language,
           instructions: args.instructions,

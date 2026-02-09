@@ -580,21 +580,35 @@ export function useChat({
 
   // Submit exercise
   const submitExercise = useCallback(
-    async (code: string) => {
+    async (code: string, blankValues?: Record<string, string>) => {
       if (!activeExercise || !projectId || !sessionId) return;
 
       // Store exercise context for recovery in case of error
       const exerciseToSubmit = activeExercise;
       const attemptId = crypto.randomUUID();
+      const exerciseType = exerciseToSubmit.type;
 
-      // Create the submission message content for the AI
-      const submissionContent = `[Exercise Submission]
-Title: ${exerciseToSubmit.title}
+      // Build submission content based on exercise type
+      let submissionContent: string;
+      let editorCodeForAI: string;
 
-Code:
-\`\`\`${exerciseToSubmit.language}
-${code}
-\`\`\``;
+      if (exerciseType === "fill_in_blank" && !blankValues) {
+        setActiveExercise(exerciseToSubmit);
+        setError("Fill-in-blank submission is missing blank values");
+        return;
+      }
+
+      if (exerciseType === "fill_in_blank" && blankValues) {
+        const blankList = Object.entries(blankValues)
+          .sort(([a], [b]) => Number(a) - Number(b))
+          .map(([idx, val]) => `Blank ${Number(idx) + 1}: ${val}`)
+          .join("\n");
+        submissionContent = `[Exercise Submission — Fill in the Blank]\nTitle: ${exerciseToSubmit.title}\n\nAnswers:\n${blankList}`;
+        editorCodeForAI = `Template:\n${exerciseToSubmit.starterCode}\n\nAnswers:\n${blankList}`;
+      } else {
+        submissionContent = `[Exercise Submission]\nTitle: ${exerciseToSubmit.title}\n\nCode:\n\`\`\`${exerciseToSubmit.language}\n${code}\n\`\`\``;
+        editorCodeForAI = code;
+      }
 
       // Create exerciseSubmission for the message
       const exerciseSubmission: ExerciseSubmission = {
@@ -603,6 +617,7 @@ ${code}
         code,
         title: exerciseToSubmit.title,
         instructions: exerciseToSubmit.instructions,
+        blankValues,
       };
 
       // Clear active exercise (panel disappears) - do this before sending
@@ -616,29 +631,34 @@ ${code}
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ attemptId, code }),
+            body: JSON.stringify({ attemptId, code, blankValues }),
           }
         );
 
-        if (attemptResponse.ok) {
-          const attempt = await attemptResponse.json();
-          // Update local exercises state with the new attempt
-          setExercises((prev) => {
-            const exercise = prev[exerciseToSubmit.id];
-            if (!exercise) return prev;
-            return {
-              ...prev,
-              [exerciseToSubmit.id]: {
-                ...exercise,
-                status: "pending_review",
-                attempts: [...exercise.attempts, attempt],
-              },
-            };
-          });
+        if (!attemptResponse.ok) {
+          console.error("Failed to submit attempt:", attemptResponse.status);
+          setActiveExercise(exerciseToSubmit);
+          setError("Failed to submit exercise attempt");
+          return;
         }
 
+        const attempt = await attemptResponse.json();
+        // Update local exercises state with the new attempt
+        setExercises((prev) => {
+          const exercise = prev[exerciseToSubmit.id];
+          if (!exercise) return prev;
+          return {
+            ...prev,
+            [exerciseToSubmit.id]: {
+              ...exercise,
+              status: "pending_review",
+              attempts: [...exercise.attempts, attempt],
+            },
+          };
+        });
+
         // Send the message with exercise submission metadata and editor code
-        await sendMessage(submissionContent, "submit", exerciseSubmission, code);
+        await sendMessage(submissionContent, "submit", exerciseSubmission, editorCodeForAI);
       } catch (err) {
         // Restore exercise context on error so user can retry
         setActiveExercise(exerciseToSubmit);

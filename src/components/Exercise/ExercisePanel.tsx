@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Exercise } from "@/lib/types";
 import ExerciseHeader from "./ExerciseHeader";
 import ExerciseInstructions from "./ExerciseInstructions";
 import ExerciseEditor from "./ExerciseEditor";
+import FillInBlankEditor from "./FillInBlankEditor";
 import ExerciseActions from "./ExerciseActions";
 
 interface ExercisePanelProps {
   exercise: Exercise;
-  onSubmit: (code: string) => void;
+  onSubmit: (code: string, blankValues?: Record<string, string>) => void;
   onSkip: () => void;
   onReset: () => void;
   disabled?: boolean;
@@ -22,14 +23,38 @@ export default function ExercisePanel({
   onReset,
   disabled = false,
 }: ExercisePanelProps) {
+  const exerciseType = exercise.type;
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
+
+  // Code state — used for write_code exercises
   const [code, setCode] = useState(() => {
-    // Initialize from last attempt if exists, otherwise use starter code
     if (exercise.attempts.length > 0) {
       return exercise.attempts[exercise.attempts.length - 1].code;
     }
     return exercise.starterCode;
   });
+
+  // Blank values state — used for fill_in_blank exercises
+  const [, setBlankValues] = useState<Record<string, string>>(() => {
+    if (exercise.attempts.length > 0) {
+      return exercise.attempts[exercise.attempts.length - 1].blankValues ?? {};
+    }
+    return {};
+  });
+
+  // Ref tracks latest blank values for reliable access at submit time
+  // (avoids stale closure if React hasn't re-rendered yet)
+  const blankValuesRef = useRef<Record<string, string>>(
+    exercise.attempts.length > 0
+      ? (exercise.attempts[exercise.attempts.length - 1].blankValues ?? {})
+      : {}
+  );
+  const handleBlankValuesChange = useCallback((values: Record<string, string>) => {
+    blankValuesRef.current = values;
+    setBlankValues(values);
+  }, []);
+
   const [isPending, setIsPending] = useState(false);
   const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -44,15 +69,19 @@ export default function ExercisePanel({
     };
   }, [exercise.id]);
 
-  // Update code when exercise changes
+  // Update code and blank values when exercise changes
   useEffect(() => {
-    // Reset pending state when exercise changes
     setIsPending(false);
-
     if (exercise.attempts.length > 0) {
-      setCode(exercise.attempts[exercise.attempts.length - 1].code);
+      const lastAttempt = exercise.attempts[exercise.attempts.length - 1];
+      setCode(lastAttempt.code);
+      const bv = lastAttempt.blankValues ?? {};
+      setBlankValues(bv);
+      blankValuesRef.current = bv;
     } else {
       setCode(exercise.starterCode);
+      setBlankValues({});
+      blankValuesRef.current = {};
     }
   }, [exercise.id, exercise.attempts, exercise.starterCode]);
 
@@ -62,11 +91,22 @@ export default function ExercisePanel({
     // even if onSubmit triggers a synchronous unmount
     const timeoutId = setTimeout(() => setIsPending(false), 1000);
     pendingTimeoutRef.current = timeoutId;
-    onSubmit(code);
+
+    if (exerciseType === "fill_in_blank") {
+      onSubmit(exercise.starterCode, blankValuesRef.current);
+    } else {
+      onSubmit(code);
+    }
   };
 
   const handleReset = () => {
-    setCode(exercise.starterCode);
+    if (exerciseType === "fill_in_blank") {
+      setBlankValues({});
+      blankValuesRef.current = {};
+      setResetKey((k) => k + 1);
+    } else {
+      setCode(exercise.starterCode);
+    }
     onReset();
   };
 
@@ -83,7 +123,23 @@ export default function ExercisePanel({
       {!isCollapsed && (
         <div className="animate-in slide-in-from-top-2 duration-200">
           <ExerciseInstructions instructions={exercise.instructions} hints={exercise.hints} />
-          <ExerciseEditor code={code} language={exercise.language} onChange={setCode} />
+
+          {exerciseType === "fill_in_blank" ? (
+            <FillInBlankEditor
+              key={`${exercise.id}-${resetKey}`}
+              starterCode={exercise.starterCode}
+              language={exercise.language}
+              onBlankValuesChange={handleBlankValuesChange}
+              initialBlankValues={
+                exercise.attempts.length > 0
+                  ? exercise.attempts[exercise.attempts.length - 1].blankValues
+                  : undefined
+              }
+            />
+          ) : (
+            <ExerciseEditor code={code} language={exercise.language} onChange={setCode} />
+          )}
+
           <ExerciseActions
             onSubmit={handleSubmit}
             onSkip={onSkip}
