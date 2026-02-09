@@ -2,7 +2,7 @@ import { marked } from "marked";
 import { memo, useId, useMemo } from "react";
 import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CodeBlock, CodeBlockCode, CodeBlockHeader } from "./code-block";
+import { CodeBlock, CodeBlockCode, CodeBlockHeader, InlineCode } from "./code-block";
 import { MermaidBlock } from "./mermaid-block";
 import { ScrollArea } from "./scroll-area";
 
@@ -60,11 +60,7 @@ const INITIAL_COMPONENTS: Partial<Components> = {
       props.node?.position?.start.line === props.node?.position?.end.line;
 
     if (isInline) {
-      return (
-        <code className="px-1.5 py-0.5 bg-yellow-100/50 dark:bg-yellow-900/20 text-[0.9em] font-mono border border-yellow-200/50 dark:border-yellow-700/30">
-          {children}
-        </code>
-      );
+      return <InlineCode>{children}</InlineCode>;
     }
 
     const language = extractLanguage(className);
@@ -77,7 +73,7 @@ const INITIAL_COMPONENTS: Partial<Components> = {
     return (
       <div className="my-4">
         <CodeBlock>
-          <CodeBlockHeader language={language} />
+          <CodeBlockHeader language={language} code={codeString} />
           <CodeBlockCode code={codeString} language={language || "text"} />
         </CodeBlock>
       </div>

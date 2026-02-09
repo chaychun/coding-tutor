@@ -171,7 +171,7 @@ export function ExerciseSubmissionCard({
           ) : submission.code ? (
             <>
               <CodeBlock>
-                <CodeBlockHeader language={language} />
+                <CodeBlockHeader language={language} code={submission.code} />
                 <CodeBlockCode code={displayCode} language={language || "text"} />
               </CodeBlock>
               {shouldCollapse && (
