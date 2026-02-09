@@ -29,9 +29,13 @@ const suggestions = [
 function EmptyState({
   onSuggestionClick,
   onSendMessage,
+  testingMode,
+  onTestingModeChange,
 }: {
   onSuggestionClick: (message: string) => void;
   onSendMessage: (message: string) => void;
+  testingMode?: boolean;
+  onTestingModeChange?: (enabled: boolean) => void;
 }) {
   return (
     <div className="min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center py-12">
@@ -53,7 +57,11 @@ function EmptyState({
 
         {/* Input */}
         <div className="w-full mb-8 mt-8">
-          <MessageInput onSend={onSendMessage} />
+          <MessageInput
+            onSend={onSendMessage}
+            testingMode={testingMode}
+            onTestingModeChange={onTestingModeChange}
+          />
         </div>
 
         {/* Suggestion Chips */}
@@ -97,6 +105,8 @@ interface ChatProps {
   onExerciseReset?: () => void;
   onExerciseRetry?: (exerciseId: string, code: string) => void;
   onConceptAnswer?: (questionId: string, optionIndex: number) => void;
+  testingMode?: boolean;
+  onTestingModeChange?: (enabled: boolean) => void;
   className?: string;
 }
 
@@ -116,6 +126,8 @@ export default function Chat({
   onExerciseReset,
   onExerciseRetry,
   onConceptAnswer,
+  testingMode,
+  onTestingModeChange,
   className = "",
 }: ChatProps) {
   const isEmptyState =
@@ -136,7 +148,12 @@ export default function Chat({
                   </div>
                 </div>
               ) : isEmptyState ? (
-                <EmptyState onSuggestionClick={onSendMessage} onSendMessage={onSendMessage} />
+                <EmptyState
+                  onSuggestionClick={onSendMessage}
+                  onSendMessage={onSendMessage}
+                  testingMode={testingMode}
+                  onTestingModeChange={onTestingModeChange}
+                />
               ) : (
                 <MessageList
                   messages={messages}
@@ -179,7 +196,12 @@ export default function Chat({
       {!isEmptyState && (
         <div className="relative z-10 px-4 pb-4">
           <div className="max-w-3xl mx-auto">
-            <MessageInput onSend={onSendMessage} disabled={isStreaming} />
+            <MessageInput
+              onSend={onSendMessage}
+              disabled={isStreaming}
+              testingMode={testingMode}
+              onTestingModeChange={onTestingModeChange}
+            />
           </div>
         </div>
       )}

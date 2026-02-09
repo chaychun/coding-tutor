@@ -12,17 +12,23 @@ interface ChatRequest {
   resumeSessionId?: string;
   action: "message" | "submit" | "hint" | "skip" | "concept_answer";
   editorCode?: string;
+  testingMode?: boolean;
 }
 
 export async function POST(request: Request) {
   const body: ChatRequest = await request.json();
-  const { message, projectId, sessionId, resumeSessionId, action, editorCode } = body;
+  const { message, projectId, sessionId, resumeSessionId, action, editorCode, testingMode } = body;
 
   // Build the prompt based on action type
   let promptText: string;
 
+  // Debug prefix for testing mode — echoes raw input so the developer can verify data flow
+  const debugPrefix = testingMode
+    ? `[DEBUG — Testing Mode]\nAction: ${action}\n`
+    : "";
+
   if (action === "submit") {
-    promptText = `The student has submitted their code for evaluation:
+    promptText = `${debugPrefix}${testingMode ? `Editor code received:\n\`\`\`\n${editorCode}\n\`\`\`\n\n` : ""}The student has submitted their code for evaluation:
 
 \`\`\`
 ${editorCode}
@@ -30,7 +36,7 @@ ${editorCode}
 
 Please evaluate this solution. Check if it meets the expected behavior, point out what was done correctly, explain any errors or areas for improvement, and decide the next step (another exercise, harder variant, or move on).`;
   } else if (action === "hint") {
-    promptText = `The student is asking for a hint. Their current code is:
+    promptText = `${debugPrefix}${testingMode ? `Editor code received:\n\`\`\`\n${editorCode}\n\`\`\`\n\n` : ""}The student is asking for a hint. Their current code is:
 
 \`\`\`
 ${editorCode}
@@ -39,11 +45,11 @@ ${editorCode}
 Provide a helpful hint that guides them toward the solution without giving away the answer. Focus on the concept they might be missing or a small nudge in the right direction.`;
   } else if (action === "skip") {
     // For skip action, pass the message through as-is (it contains the skip notification)
-    promptText = message;
+    promptText = debugPrefix + message;
   } else if (action === "concept_answer") {
-    promptText = message;
+    promptText = debugPrefix + message;
   } else {
-    promptText = message;
+    promptText = debugPrefix + message;
   }
 
   const encoder = new TextEncoder();
@@ -76,7 +82,7 @@ Provide a helpful hint that guides them toward the solution without giving away 
               "WebSearch",
               "WebFetch",
             ],
-            systemPrompt: getTutorSystemPrompt(projectId, sessionId),
+            systemPrompt: getTutorSystemPrompt(projectId, sessionId, testingMode ?? false),
             resume: resumeSessionId,
             permissionMode: "bypassPermissions",
             maxTurns: 10,

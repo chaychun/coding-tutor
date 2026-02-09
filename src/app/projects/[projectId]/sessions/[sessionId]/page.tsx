@@ -21,6 +21,7 @@ export default function SessionPage({ params }: PageProps) {
   // Project and session state
   const { projects, loading: projectsLoading, createProject, updateProject } = useProjects();
   const [agentSessionId, setAgentSessionId] = useState<string | undefined>();
+  const [testingMode, setTestingMode] = useState(false);
 
   const {
     sessions,
@@ -57,6 +58,7 @@ export default function SessionPage({ params }: PageProps) {
     projectId,
     sessionId,
     agentSessionId,
+    testingMode,
     onSessionId: setAgentSessionId,
     onTitleGenerated: (title) => {
       updateSessionTitleLocal(sessionId, title);
@@ -149,9 +151,9 @@ export default function SessionPage({ params }: PageProps) {
 
   const handleSendMessage = useCallback(
     (message: string) => {
-      sendMessage(message, "message");
+      sendMessage(message, "message", undefined, undefined, testingMode);
     },
-    [sendMessage]
+    [sendMessage, testingMode]
   );
 
   const handleRenameProject = useCallback(
@@ -216,6 +218,8 @@ export default function SessionPage({ params }: PageProps) {
             onExerciseReset={() => {}}
             onExerciseRetry={retryExercise}
             onConceptAnswer={answerConceptQuestion}
+            testingMode={testingMode}
+            onTestingModeChange={setTestingMode}
           />
         )}
       </SidebarInset>

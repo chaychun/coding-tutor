@@ -42,6 +42,7 @@ interface UseChatOptions {
   projectId: string | null;
   sessionId: string | null;
   agentSessionId?: string;
+  testingMode?: boolean;
   onExerciseCreated?: (exercise: Exercise) => void;
   onSessionId?: (sessionId: string) => void;
   onTitleGenerated?: (title: string) => void;
@@ -51,6 +52,7 @@ export function useChat({
   projectId,
   sessionId,
   agentSessionId,
+  testingMode,
   onExerciseCreated,
   onSessionId,
   onTitleGenerated,
@@ -69,6 +71,8 @@ export function useChat({
   const messagesRef = useRef<Message[]>([]);
   // Track the latest agentSessionId to avoid stale closure in sendMessage
   const agentSessionIdRef = useRef<string | undefined>(agentSessionId);
+  // Track testing mode via ref so all internal sendMessage calls use latest value
+  const testingModeRef = useRef(testingMode ?? false);
   // Track mounted state to prevent state updates after unmount
   const mountedRef = useRef(true);
 
@@ -76,6 +80,11 @@ export function useChat({
   useEffect(() => {
     agentSessionIdRef.current = agentSessionId;
   }, [agentSessionId]);
+
+  // Keep testingMode ref in sync with prop
+  useEffect(() => {
+    testingModeRef.current = testingMode ?? false;
+  }, [testingMode]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -146,7 +155,8 @@ export function useChat({
       content: string,
       action: "message" | "submit" | "hint" | "skip" | "concept_answer" = "message",
       exerciseSubmission?: ExerciseSubmission,
-      editorCode?: string
+      editorCode?: string,
+      testingMode?: boolean
     ) => {
       if (!projectId || !sessionId) {
         setError("No project or session selected");
@@ -352,6 +362,7 @@ export function useChat({
             resumeSessionId: agentSessionIdRef.current,
             action,
             editorCode,
+            testingMode: testingMode ?? testingModeRef.current,
           }),
           signal: abortControllerRef.current.signal,
         });
