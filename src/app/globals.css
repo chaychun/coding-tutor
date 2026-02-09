@@ -130,22 +130,3 @@
   scrollbar-gutter: auto !important;
 }
 
-/* Streaming cursor — blinking caret at the end of streaming text */
-.streaming-cursor > :last-child {
-  display: inline;
-}
-.streaming-cursor::after {
-  content: "";
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  background-color: var(--primary);
-  vertical-align: text-bottom;
-  margin-left: 2px;
-  animation: caret-blink 1.25s ease-out infinite;
-}
-
-@keyframes caret-blink {
-  0%, 70% { opacity: 1; }
-  71%, 100% { opacity: 0; }
-}

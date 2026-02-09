@@ -93,12 +93,6 @@ export default function ChatMessage({
 
   // Use contentBlocks if available for interleaved rendering
   if (message.contentBlocks && message.contentBlocks.length > 0) {
-    // Find last text block index for streaming cursor placement
-    const lastTextIndex = message.contentBlocks.reduce(
-      (last, block, i) => (block.type === "text" ? i : last),
-      -1
-    );
-
     // For streaming: distribute the buffered text across text blocks.
     // Each finalized text block gets its full length; the last (growing) block
     // gets whatever the buffer has revealed so far.
@@ -112,8 +106,6 @@ export default function ChatMessage({
           <div className="space-y-2">
             {message.contentBlocks.map((block, index) => {
               if (block.type === "text") {
-                const isLastText = index === lastTextIndex;
-
                 let displayText = block.text;
                 if (isStreaming) {
                   // Take up to blockLength chars from the remaining budget
@@ -126,10 +118,7 @@ export default function ChatMessage({
                 if (isStreaming && !displayText) return null;
 
                 return (
-                  <div
-                    key={`text-${index}`}
-                    className={`text-sm ${isStreaming && isLastText && displayText ? "streaming-cursor" : ""}`}
-                  >
+                  <div key={`text-${index}`} className="text-sm">
                     <Markdown id={message.id}>{displayText}</Markdown>
                   </div>
                 );
@@ -185,7 +174,7 @@ export default function ChatMessage({
 
           {/* Message content with markdown */}
           {(isStreaming ? bufferedText : message.content) && (
-            <div className={`text-sm ${isStreaming ? "streaming-cursor" : ""}`}>
+            <div className="text-sm">
               <Markdown id={message.id}>
                 {isStreaming ? bufferedText : message.content || ""}
               </Markdown>
