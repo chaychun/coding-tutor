@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router";
+import { DevBranchTag } from "@/components/DevBranchTag";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { CredentialProvider } from "@/hooks/useCredentialStatus";
@@ -22,6 +23,7 @@ initSidecar().then(() => {
     <StrictMode>
       <ThemeProvider>
         <CredentialProvider>
+          <DevBranchTag />
           <BrowserRouter>
             <Routes>
               <Route
