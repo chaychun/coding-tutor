@@ -12,6 +12,13 @@ import "@/app/globals.css";
 // Mark Tauri mode on <html> so CSS can add traffic-light inset
 if (window.__TAURI_INTERNALS__) {
   document.documentElement.dataset.tauri = "";
+
+  window.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "r") {
+      e.preventDefault();
+      window.location.reload();
+    }
+  });
 }
 
 // Initialize sidecar connection before rendering.
