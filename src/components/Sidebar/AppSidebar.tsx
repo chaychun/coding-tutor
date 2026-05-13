@@ -16,6 +16,8 @@ import {
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useIsTauri } from "@/hooks/use-tauri";
+import { cn } from "@/lib/utils";
 import CreateProjectModal from "./CreateProjectModal";
 import ProjectMenu from "./ProjectMenu";
 
@@ -47,6 +49,7 @@ export default function AppSidebar({
   onRenameSession,
 }: AppSidebarProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const isTauri = useIsTauri();
 
   const handleCreateProject = (name: string) => {
     onCreateProject(name);
@@ -55,8 +58,8 @@ export default function AppSidebar({
 
   return (
     <Sidebar>
-      {/* Header with branding — extra top padding in Tauri for traffic lights */}
-      <SidebarHeader className="border-b border-sidebar-border [[data-tauri]_&]:pt-10">
+      <SidebarHeader className={cn("relative border-b border-sidebar-border", isTauri && "pt-10")}>
+        {isTauri && <div data-tauri-drag-region className="absolute inset-x-0 top-0 h-10 z-20" />}
         <div data-tauri-drag-region className="flex items-center gap-2 px-2">
           <GraduationCap className="size-5" weight="bold" />
           <span className="text-sm font-bold">Coding Tutor</span>
