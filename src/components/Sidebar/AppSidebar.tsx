@@ -12,8 +12,6 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -29,7 +27,6 @@ interface AppSidebarProps {
   sessions: Session[];
   currentProjectId: string | null;
   currentSessionId: string | null;
-  loading?: boolean;
   onSelectProject: (projectId: string) => void;
   onSelectSession: (projectId: string, sessionId: string) => void;
   onCreateProject: (name: string) => void;
@@ -43,7 +40,6 @@ export default function AppSidebar({
   sessions,
   currentProjectId,
   currentSessionId,
-  loading = false,
   onSelectProject,
   onSelectSession,
   onCreateProject,
@@ -81,13 +77,7 @@ export default function AppSidebar({
             <span className="sr-only">New Project</span>
           </SidebarGroupAction>
           <SidebarGroupContent>
-            {loading ? (
-              <SidebarMenu>
-                {[1, 2, 3].map((i) => (
-                  <SidebarMenuSkeleton key={i} showIcon />
-                ))}
-              </SidebarMenu>
-            ) : projects.length === 0 ? (
+            {projects.length === 0 ? (
               <div className="text-center py-8 px-2 text-muted-foreground text-xs">
                 No projects yet.
                 <br />

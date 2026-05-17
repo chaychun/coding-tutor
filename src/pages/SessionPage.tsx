@@ -6,7 +6,7 @@ import Chat from "@/components/Chat/Chat";
 import { useProjects } from "@/hooks/useProjects";
 import { useSessions } from "@/hooks/useSessions";
 import { useChat } from "@/hooks/useChat";
-import { Button, Spinner } from "@/components/ui";
+import { Button } from "@/components/ui";
 
 export default function SessionPage() {
   const navigate = useNavigate();
@@ -17,14 +17,13 @@ export default function SessionPage() {
   }
 
   // Project and session state
-  const { projects, loading: projectsLoading, createProject, updateProject } = useProjects();
+  const { projects, createProject, updateProject } = useProjects();
   const [agentSessionId, setAgentSessionId] = useState<string | undefined>();
   const [testingMode, setTestingMode] = useState(false);
 
   const {
     sessions,
     currentSession,
-    loading: sessionLoading,
     error: sessionError,
     fetchSessions,
     createSession,
@@ -63,10 +62,10 @@ export default function SessionPage() {
     },
   });
 
-  // Fetch sessions for sidebar
+  // Fetch sessions for every project so sidebar counts are accurate up front
   useEffect(() => {
-    fetchSessions(projectId);
-  }, [projectId, fetchSessions]);
+    projects.forEach((p) => fetchSessions(p.id));
+  }, [projects, fetchSessions]);
 
   // Load session data when sessionId changes
   useEffect(() => {
@@ -171,7 +170,6 @@ export default function SessionPage() {
         sessions={sessions}
         currentProjectId={projectId}
         currentSessionId={sessionId}
-        loading={projectsLoading}
         onSelectProject={handleSelectProject}
         onSelectSession={handleSelectSession}
         onCreateProject={handleCreateProject}
@@ -180,15 +178,7 @@ export default function SessionPage() {
         onRenameSession={handleRenameSession}
       />
       <SidebarInset className="flex flex-col overflow-hidden">
-        {/* Loading State */}
-        {sessionLoading && !currentSession ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Spinner size={32} className="mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading session...</p>
-            </div>
-          </div>
-        ) : sessionError ? (
+        {sessionError ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <p className="text-destructive mb-4">Error: {sessionError}</p>
@@ -204,7 +194,6 @@ export default function SessionPage() {
             streamingContent={streamingContent}
             streamingToolCalls={streamingToolCalls}
             streamingContentBlocks={streamingContentBlocks}
-            loading={sessionLoading || !currentSession}
             onSendMessage={handleSendMessage}
             activeExercise={activeExercise}
             onExerciseSubmit={submitExercise}
