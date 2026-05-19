@@ -20,113 +20,40 @@ export default function SessionPage() {
     throw new Error("Missing projectId or sessionId in URL params");
   }
 
-  // Project and session state
   const { projects, createProject, updateProject, deleteProject } = useProjects();
-  const [agentSessionId, setAgentSessionId] = useState<string | undefined>();
   const [testingMode, setTestingMode] = useState(false);
 
   const {
     sessions,
-    currentSession,
     error: sessionError,
     errorByProject,
     fetchSessions,
-    selectSession,
     updateSession,
     deleteSession,
-    updateSessionTitleLocal,
     clearSessionsForProject,
   } = useSessions(projectId);
 
-  // Chat hook with exercise state
   const {
     messages,
     isStreaming,
-    streamingContent,
-    streamingToolCalls,
-    streamingContentBlocks,
     sendMessage,
-    loadMessages,
     activeExercise,
-    setActiveExercise,
     exercises,
-    setExercises,
     submitExercise,
     skipExercise,
     retryExercise,
     conceptQuestions,
-    setConceptQuestions,
     answerConceptQuestion,
-    failedMessageIds,
   } = useChat({
     projectId,
     sessionId,
-    agentSessionId,
     testingMode,
-    onSessionId: setAgentSessionId,
-    onTitleGenerated: (title) => {
-      updateSessionTitleLocal(sessionId, title);
-    },
   });
 
   // Fetch sessions for every project so sidebar counts are accurate up front
   useEffect(() => {
     projects.forEach((p) => fetchSessions(p.id));
   }, [projects, fetchSessions]);
-
-  // Capture once whether this mount arrived with a pending message. If so, the
-  // session is brand new and empty — skip the initial load to avoid racing
-  // with sendMessage's optimistic user-message append.
-  const skipInitialLoadRef = useRef(
-    (location.state as SessionNavState)?.pendingMessage !== undefined
-  );
-
-  // Load session data when sessionId changes
-  useEffect(() => {
-    if (skipInitialLoadRef.current) {
-      skipInitialLoadRef.current = false;
-      return;
-    }
-    const loadSessionData = async () => {
-      const session = await selectSession(projectId, sessionId);
-      if (session) {
-        loadMessages(session.messages);
-        if (session.exercises) {
-          setExercises(session.exercises);
-        }
-        if (session.conceptQuestions) {
-          setConceptQuestions(session.conceptQuestions);
-        }
-        if (session.agentSessionId) {
-          setAgentSessionId(session.agentSessionId);
-        }
-      }
-    };
-    loadSessionData();
-  }, [
-    projectId,
-    sessionId,
-    selectSession,
-    loadMessages,
-    setExercises,
-    setConceptQuestions,
-    setAgentSessionId,
-  ]);
-
-  // Restore active exercise when session loads
-  useEffect(() => {
-    if (currentSession?.activeExerciseId && currentSession.exercises) {
-      const exercise = currentSession.exercises[currentSession.activeExerciseId];
-      if (
-        exercise &&
-        (exercise.status === "active" ||
-          exercise.status === "pending_review" ||
-          exercise.status === "needs_retry")
-      ) {
-        setActiveExercise(exercise);
-      }
-    }
-  }, [currentSession?.activeExerciseId, currentSession?.exercises, setActiveExercise]);
 
   // Navigation handlers
   const tryRestartSidecar = useCallback(async () => {
@@ -139,9 +66,6 @@ export default function SessionPage() {
 
   const handleSelectProject = useCallback(
     async (newProjectId: string) => {
-      // If this project's last fetch failed, attempt to restore the sidecar
-      // before refetching — otherwise the click is a no-op when the backend
-      // is dead.
       if (errorByProject[newProjectId]) {
         await tryRestartSidecar();
       }
@@ -152,8 +76,8 @@ export default function SessionPage() {
 
   const handleRetrySession = useCallback(async () => {
     await tryRestartSidecar();
-    selectSession(projectId, sessionId);
-  }, [projectId, sessionId, selectSession, tryRestartSidecar]);
+    fetchSessions(projectId);
+  }, [projectId, fetchSessions, tryRestartSidecar]);
 
   const handleSelectSession = useCallback(
     (newProjectId: string, newSessionId: string) => {
@@ -269,10 +193,6 @@ export default function SessionPage() {
             exercises={exercises}
             conceptQuestions={conceptQuestions}
             isStreaming={isStreaming}
-            streamingContent={streamingContent}
-            streamingToolCalls={streamingToolCalls}
-            streamingContentBlocks={streamingContentBlocks}
-            failedMessageIds={failedMessageIds}
             onSendMessage={handleSendMessage}
             activeExercise={activeExercise}
             onExerciseSubmit={submitExercise}

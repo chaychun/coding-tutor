@@ -1,133 +1,130 @@
 import type { Request, Response } from "express";
-import { query } from "@anthropic-ai/claude-agent-sdk";
-import { tutorServer } from "./tutorServer";
-import { getTutorSystemPrompt } from "../lib/agent/systemPrompt";
+import { abortJob, getSnapshot, isRunning, startJob, subscribe } from "./chatJobs";
+import type { ChatAction, StartJobOptions } from "./chatJobs";
+import type { ExerciseSubmission, ConceptQuestionAnswer } from "../lib/types";
 
-interface ChatRequest {
-  message: string;
+interface ChatStartBody {
   projectId: string;
   sessionId: string;
-  resumeSessionId?: string;
-  action: "message" | "submit" | "hint" | "skip" | "concept_answer";
+  action: ChatAction;
+  message: string;
+  userMessageId?: string;
   editorCode?: string;
+  exerciseSubmission?: ExerciseSubmission;
+  conceptQuestionAnswer?: ConceptQuestionAnswer;
   testingMode?: boolean;
 }
 
-export async function handleChat(req: Request, res: Response): Promise<void> {
-  const body: ChatRequest = req.body;
-  const { message, projectId, sessionId, resumeSessionId, action, editorCode, testingMode } = body;
+const VALID_ACTIONS: ReadonlySet<ChatAction> = new Set([
+  "message",
+  "submit",
+  "hint",
+  "skip",
+  "concept_answer",
+]);
 
-  // Build the prompt based on action type
-  let promptText: string;
-  const debugPrefix = testingMode ? `[DEBUG — Testing Mode]\nAction: ${action}\n` : "";
+export async function handleChatStart(req: Request, res: Response): Promise<void> {
+  const body = req.body as Partial<ChatStartBody>;
+  const { projectId, sessionId, action, message } = body;
 
-  if (action === "submit") {
-    promptText = `${debugPrefix}${testingMode ? `Submission received:\n\`\`\`\n${editorCode}\n\`\`\`\n\n` : ""}The student has submitted their answer for evaluation:
-
-${editorCode}
-
-Please evaluate this solution. Check if it meets the expected behavior, point out what was done correctly, explain any errors or areas for improvement, and decide the next step (another exercise, harder variant, or move on).`;
-  } else if (action === "hint") {
-    promptText = `${debugPrefix}${testingMode ? `Editor code received:\n\`\`\`\n${editorCode}\n\`\`\`\n\n` : ""}The student is asking for a hint. Their current code is:
-
-\`\`\`
-${editorCode}
-\`\`\`
-
-Provide a helpful hint that guides them toward the solution without giving away the answer. Focus on the concept they might be missing or a small nudge in the right direction.`;
-  } else {
-    promptText = debugPrefix + message;
+  if (!projectId || !sessionId || !action) {
+    res.status(400).json({ error: "projectId, sessionId, and action are required" });
+    return;
+  }
+  if (!VALID_ACTIONS.has(action)) {
+    res.status(400).json({ error: `Invalid action: ${action}` });
+    return;
+  }
+  if (action !== "hint" && typeof message !== "string") {
+    res.status(400).json({ error: "message is required for this action" });
+    return;
   }
 
-  // Set SSE headers
+  const opts: StartJobOptions = {
+    projectId,
+    sessionId,
+    action,
+    message: message ?? "",
+    userMessageId: body.userMessageId,
+    editorCode: body.editorCode,
+    exerciseSubmission: body.exerciseSubmission,
+    conceptQuestionAnswer: body.conceptQuestionAnswer,
+    testingMode: body.testingMode,
+  };
+
+  const result = await startJob(opts);
+  if (!result.ok) {
+    if (result.reason === "already_running") {
+      res.status(409).json({ error: "already_running" });
+      return;
+    }
+    if (result.reason === "session_not_found") {
+      res.status(404).json({ error: "session_not_found" });
+      return;
+    }
+  }
+  res.status(202).json({ ok: true });
+}
+
+export async function handleChatEvents(req: Request, res: Response): Promise<void> {
+  const projectId = req.params.projectId as string | undefined;
+  const sessionId = req.params.sessionId as string | undefined;
+  if (!projectId || !sessionId) {
+    res.status(400).json({ error: "projectId and sessionId are required" });
+    return;
+  }
+
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders();
 
-  try {
-    let stopBeforeNextAssistant = false;
-
-    for await (const sdkMessage of query({
-      prompt: promptText,
-      options: {
-        mcpServers: {
-          mula: tutorServer,
-        },
-        allowedTools: [
-          "mcp__mula__read_progress",
-          "mcp__mula__update_progress",
-          "mcp__mula__create_exercise",
-          "mcp__mula__update_exercise",
-          "mcp__mula__list_topics",
-          "mcp__mula__ask_concept_question",
-          "mcp__mula__wrap_up_session",
-          "WebSearch",
-          "WebFetch",
-        ],
-        systemPrompt: getTutorSystemPrompt(projectId, sessionId, testingMode ?? false),
-        resume: resumeSessionId,
-        permissionMode: "bypassPermissions",
-        maxTurns: 10,
-        // In compiled binary mode, the SDK can't auto-detect the claude CLI path.
-        // Use CLAUDE_PATH env var if set, otherwise let the SDK find it.
-        ...(process.env.CLAUDE_PATH ? { pathToClaudeCodeExecutable: process.env.CLAUDE_PATH } : {}),
-      },
-    })) {
-      const msg = sdkMessage as Record<string, unknown>;
-
-      if (stopBeforeNextAssistant && msg.type === "assistant") {
-        break;
-      }
-
-      const data = JSON.stringify({
-        ...sdkMessage,
-        _meta: { projectId, sessionId },
-      });
-      res.write(`data: ${data}\n\n`);
-
-      // Detect tool calls that should stop the loop
-      if (msg.type === "assistant") {
-        const message = msg.message as
-          | {
-              content?: Array<{
-                type: string;
-                name?: string;
-                input?: Record<string, unknown>;
-              }>;
-            }
-          | undefined;
-        if (message?.content) {
-          for (const block of message.content) {
-            if (block.type !== "tool_use") continue;
-
-            if (
-              block.name === "mcp__mula__ask_concept_question" ||
-              block.name === "mcp__mula__create_exercise"
-            ) {
-              stopBeforeNextAssistant = true;
-            }
-
-            if (block.name === "mcp__mula__update_exercise") {
-              const status = block.input?.status as string | undefined;
-              if (status && status !== "passed" && status !== "passed_with_feedback") {
-                stopBeforeNextAssistant = true;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    res.write("data: [DONE]\n\n");
+  // Emit the current snapshot (job state if running, else from storage) and the
+  // running flag so the client can drive UI without an extra round-trip.
+  const snapshot = await getSnapshot(projectId, sessionId);
+  if (!snapshot) {
+    res.write(
+      `event: error\ndata: ${JSON.stringify({ message: "session_not_found" })}\n\n`
+    );
     res.end();
-  } catch (error) {
-    console.error("Chat API error:", error);
-    const errorData = JSON.stringify({
-      type: "error",
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    });
-    res.write(`data: ${errorData}\n\n`);
-    res.end();
+    return;
   }
+  res.write(
+    `event: snapshot\ndata: ${JSON.stringify({
+      state: snapshot,
+      running: isRunning(sessionId),
+    })}\n\n`
+  );
+
+  const unsubscribe = subscribe(sessionId, res);
+
+  // Heartbeat keeps intermediaries (and the client EventSource polyfill) honest.
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(`: heartbeat ${Date.now()}\n\n`);
+    } catch {
+      // ignore — close handler cleans up
+    }
+  }, 25_000);
+
+  const cleanup = (): void => {
+    clearInterval(heartbeat);
+    unsubscribe();
+  };
+
+  req.on("close", cleanup);
+  req.on("aborted", cleanup);
+  res.on("close", cleanup);
+  res.on("error", cleanup);
+}
+
+export async function handleChatAbort(req: Request, res: Response): Promise<void> {
+  const sessionId = req.params.sessionId as string | undefined;
+  if (!sessionId) {
+    res.status(400).json({ error: "sessionId is required" });
+    return;
+  }
+  const ok = abortJob(sessionId);
+  res.json({ ok });
 }

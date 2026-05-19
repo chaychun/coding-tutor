@@ -1,12 +1,6 @@
 "use client";
 
-import type {
-  Message,
-  Exercise,
-  ToolCall,
-  ContentBlock,
-  ConceptQuestion,
-} from "@/lib/types";
+import type { Message, Exercise, ConceptQuestion } from "@/lib/types";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ExercisePanel from "@/components/Exercise/ExercisePanel";
@@ -116,10 +110,6 @@ interface ChatProps {
   exercises?: Record<string, Exercise>;
   conceptQuestions?: Record<string, ConceptQuestion>;
   isStreaming: boolean;
-  streamingContent: string;
-  streamingToolCalls: ToolCall[];
-  streamingContentBlocks: ContentBlock[];
-  failedMessageIds?: Set<string>;
   onSendMessage: (message: string) => void;
   activeExercise?: Exercise | null;
   onExerciseSubmit?: (
@@ -140,10 +130,6 @@ export default function Chat({
   exercises,
   conceptQuestions,
   isStreaming,
-  streamingContent,
-  streamingToolCalls,
-  streamingContentBlocks,
-  failedMessageIds,
   onSendMessage,
   activeExercise,
   onExerciseSubmit,
@@ -155,10 +141,7 @@ export default function Chat({
   onTestingModeChange,
   className = "",
 }: ChatProps) {
-  const isEmptyState =
-    messages.length === 0 &&
-    !streamingContent &&
-    streamingToolCalls.length === 0;
+  const isEmptyState = messages.length === 0 && !isStreaming;
 
   return (
     <div className={`flex flex-col h-full overflow-hidden ${className}`}>
@@ -179,11 +162,7 @@ export default function Chat({
                   messages={messages}
                   exercises={exercises}
                   conceptQuestions={conceptQuestions}
-                  streamingContent={streamingContent}
-                  streamingToolCalls={streamingToolCalls}
-                  streamingContentBlocks={streamingContentBlocks}
                   isStreaming={isStreaming}
-                  failedMessageIds={failedMessageIds}
                   onExerciseRetry={onExerciseRetry}
                   onConceptAnswer={onConceptAnswer}
                 />

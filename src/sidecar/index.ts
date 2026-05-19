@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { initDatabase, closeDatabase } from "./database";
 import { router } from "./routes";
-import { handleChat } from "./chatRoute";
+import { handleChatStart, handleChatEvents, handleChatAbort } from "./chatRoute";
 import { handleVerify } from "./verifyRoute";
 
 // Read configuration from environment (injected by Rust shell)
@@ -54,8 +54,10 @@ app.get("/health", (_req, res) => {
 // API routes
 app.use(router);
 
-// Chat endpoint (SSE streaming)
-app.post("/api/chat", handleChat);
+// Chat endpoints — backend owns the agent loop; clients subscribe to events.
+app.post("/api/chat", handleChatStart);
+app.get("/api/projects/:projectId/sessions/:sessionId/chat/events", handleChatEvents);
+app.post("/api/projects/:projectId/sessions/:sessionId/chat/abort", handleChatAbort);
 
 // Credential verification — runs a tiny Agent SDK call to confirm auth works
 app.post("/api/verify-credential", handleVerify);
