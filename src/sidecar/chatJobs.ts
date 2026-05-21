@@ -375,6 +375,7 @@ async function runJob(job: ChatJob, opts: StartJobOptions): Promise<void> {
       prompt: promptText,
       options: {
         mcpServers: { mula: tutorServer },
+        tools: [],
         allowedTools: [
           "mcp__mula__read_progress",
           "mcp__mula__update_progress",
@@ -383,13 +384,12 @@ async function runJob(job: ChatJob, opts: StartJobOptions): Promise<void> {
           "mcp__mula__list_topics",
           "mcp__mula__ask_concept_question",
           "mcp__mula__wrap_up_session",
-          "WebSearch",
-          "WebFetch",
         ],
         systemPrompt: getTutorSystemPrompt(projectId, sessionId, testingMode ?? false),
         resume: job.state.agentSessionId,
         permissionMode: "bypassPermissions",
         maxTurns: 10,
+        env: { ...process.env, ENABLE_TOOL_SEARCH: "0" },
         ...(process.env.CLAUDE_PATH ? { pathToClaudeCodeExecutable: process.env.CLAUDE_PATH } : {}),
       },
     })) {

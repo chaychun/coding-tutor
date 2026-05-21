@@ -76,9 +76,11 @@ export async function regenerateTitleHaiku(
       options: {
         model: "haiku",
         systemPrompt: SYSTEM_PROMPT,
+        tools: [],
         allowedTools: [],
         maxTurns: 1,
         permissionMode: "bypassPermissions",
+        env: { ...process.env, ENABLE_TOOL_SEARCH: "0" },
         ...(process.env.CLAUDE_PATH ? { pathToClaudeCodeExecutable: process.env.CLAUDE_PATH } : {}),
       },
     })) {
