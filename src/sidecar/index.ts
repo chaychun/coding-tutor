@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import { initDatabase, closeDatabase } from "./database";
 import { router } from "./routes";
-import { handleChatStart, handleChatEvents, handleChatAbort, handleJobsEvents } from "./chatRoute";
+import { handleChatStart, handleChatEvents, handleChatAbort } from "./chatRoute";
+import { handleJobsEvents } from "./globalEventsRoute";
 import { handleVerify } from "./verifyRoute";
 
 // Read configuration from environment (injected by Rust shell)

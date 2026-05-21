@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { sidecarFetch } from "@/lib/sidecar";
+import { subscribeGlobalStream } from "@/lib/globalEventStream";
 
 export type SessionIndicator =
   | { kind: "running" }
@@ -92,69 +92,14 @@ export function useGlobalJobStatus(): {
   }, []);
 
   useEffect(() => {
-    const abortCtrl = new AbortController();
-    let cancelled = false;
-
-    const handleFrame = (frame: string) => {
-      if (!frame.trim() || frame.startsWith(":")) return;
-      let event = "message";
-      const dataLines: string[] = [];
-      for (const line of frame.split("\n")) {
-        if (line.startsWith("event:")) event = line.slice(6).trim();
-        else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-      }
-      const raw = dataLines.join("\n");
-      if (!raw) return;
-      let payload: unknown;
-      try {
-        payload = JSON.parse(raw);
-      } catch {
-        return;
-      }
+    return subscribeGlobalStream((event, payload) => {
       if (event === "snapshot") {
         const { running: runningList } = payload as SnapshotPayload;
         setRunning(new Set(runningList.map((r) => r.sessionId)));
       } else if (event === "state") {
         applyEvent(payload as GlobalJobEvent);
       }
-    };
-
-    const run = async () => {
-      try {
-        const response = await sidecarFetch("/api/jobs/events", {
-          signal: abortCtrl.signal,
-          headers: { Accept: "text/event-stream" },
-        });
-        if (!response.ok || !response.body) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        // Hand-roll parsing bc EventSource API can't send custom headers
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          let sep = buffer.indexOf("\n\n");
-          while (sep !== -1) {
-            handleFrame(buffer.slice(0, sep));
-            buffer = buffer.slice(sep + 2);
-            sep = buffer.indexOf("\n\n");
-          }
-        }
-      } catch (err) {
-        if (cancelled) return;
-        if (err instanceof Error && err.name === "AbortError") return;
-        console.error("[useGlobalJobStatus] stream failed:", err);
-      }
-    };
-
-    run();
-    return () => {
-      cancelled = true;
-      abortCtrl.abort();
-    };
+    });
   }, [applyEvent]);
 
   const clearSession = useCallback((sessionId: string) => {

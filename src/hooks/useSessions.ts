@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { Session } from "@/lib/types";
 import { sidecarFetch } from "@/lib/sidecar";
+import { subscribeGlobalStream } from "@/lib/globalEventStream";
+
+interface SessionUpdateEvent {
+  projectId: string;
+  sessionId: string;
+  title?: string;
+}
 
 export function useSessions(_projectId: string | null) {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -118,16 +125,25 @@ export function useSessions(_projectId: string | null) {
     [currentSession?.id]
   );
 
-  // Update session title in local state only (used after async title generation)
-  const updateSessionTitleLocal = useCallback(
-    (sessionId: string, title: string) => {
-      setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, title } : s)));
-      if (currentSession?.id === sessionId) {
-        setCurrentSession((prev) => (prev ? { ...prev, title } : null));
-      }
-    },
-    [currentSession?.id]
-  );
+  // Subscribe to global session metadata updates (e.g. async title regen).
+  useEffect(() => {
+    return subscribeGlobalStream((event, payload) => {
+      if (event !== "session_update") return;
+      const ev = payload as SessionUpdateEvent;
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === ev.sessionId
+            ? { ...s, ...(ev.title !== undefined ? { title: ev.title } : {}) }
+            : s
+        )
+      );
+      setCurrentSession((prev) =>
+        prev && prev.id === ev.sessionId
+          ? { ...prev, ...(ev.title !== undefined ? { title: ev.title } : {}) }
+          : prev
+      );
+    });
+  }, []);
 
   // Select a session
   const selectSession = useCallback(
@@ -170,7 +186,6 @@ export function useSessions(_projectId: string | null) {
     createSession,
     updateSession,
     deleteSession,
-    updateSessionTitleLocal,
     selectSession,
     clearSession,
     clearSessionsForProject,

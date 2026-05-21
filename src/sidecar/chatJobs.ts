@@ -14,6 +14,13 @@ import { getTutorSystemPrompt } from "../lib/agent/systemPrompt";
 import * as storage from "./storage";
 import { nowIso } from "./storage/utils";
 import { onSessionChanged } from "./storage/events";
+import { generateTitleFromMessage } from "../lib/utils/generateTitle";
+import {
+  regenerateTitleHaiku,
+  shouldRegenerateTitle,
+  broadcastSessionUpdate,
+} from "./titleJobs";
+import { broadcastGlobal } from "./globalEventBus";
 
 export type ChatAction = "message" | "submit" | "hint" | "skip" | "concept_answer";
 
@@ -38,7 +45,6 @@ interface ChatJob {
 
 const jobs = new Map<string, ChatJob>();
 const subscribers = new Map<string, Set<Response>>();
-const globalSubscribers = new Set<Response>();
 
 export type GlobalJobStatus = "running" | "finished" | "error" | "aborted";
 
@@ -47,25 +53,6 @@ export interface GlobalJobEvent {
   projectId: string;
   status: GlobalJobStatus;
   error?: string;
-}
-
-function broadcastGlobal(event: string, payload: unknown): void {
-  if (globalSubscribers.size === 0) return;
-  const chunk = `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
-  for (const res of globalSubscribers) {
-    try {
-      res.write(chunk);
-    } catch {
-      // dead connection — close handler cleans up
-    }
-  }
-}
-
-export function subscribeGlobalJobs(res: Response): () => void {
-  globalSubscribers.add(res);
-  return () => {
-    globalSubscribers.delete(res);
-  };
 }
 
 export function getGlobalJobsSnapshot(): Array<{ sessionId: string; projectId: string }> {
@@ -219,8 +206,17 @@ export async function startJob(opts: StartJobOptions): Promise<StartJobResult> {
       ...(opts.exerciseSubmission ? { exerciseSubmission: opts.exerciseSubmission } : {}),
       ...(opts.conceptQuestionAnswer ? { conceptQuestionAnswer: opts.conceptQuestionAnswer } : {}),
     };
+    const isFirstUserMessage =
+      session.messages.length === 0 && action === "message" && opts.message.trim().length > 0;
+    const initialTitle = isFirstUserMessage ? generateTitleFromMessage(opts.message) : undefined;
     state.messages = [...state.messages, userMessage];
-    await storage.updateSession(projectId, sessionId, { messages: state.messages });
+    await storage.updateSession(projectId, sessionId, {
+      messages: state.messages,
+      ...(initialTitle ? { title: initialTitle } : {}),
+    });
+    if (initialTitle) {
+      broadcastSessionUpdate({ projectId, sessionId, title: initialTitle });
+    }
   }
 
   const abortCtrl = new AbortController();
@@ -483,6 +479,9 @@ async function runJob(job: ChatJob, opts: StartJobOptions): Promise<void> {
         messages: job.state.messages,
         agentSessionId: job.state.agentSessionId,
       });
+      if (shouldRegenerateTitle(job.state.messages)) {
+        void regenerateTitleHaiku(projectId, sessionId, job.state.messages);
+      }
     } else {
       job.state.inProgressMessage = null;
     }
